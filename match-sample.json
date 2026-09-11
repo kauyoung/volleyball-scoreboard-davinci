@@ -1,0 +1,1135 @@
+{
+ "version": 1,
+ "generated": "synthetic sample - not a real match",
+ "team1": "Home Team",
+ "team2": "Away Team",
+ "date": "2026-08-06",
+ "offset": 0.0,
+ "events": [
+  {
+   "t": 0.0,
+   "set": 1,
+   "score1": 0,
+   "score2": 0,
+   "sets1": 0,
+   "sets2": 0,
+   "serve": 0
+  },
+  {
+   "t": 0.444,
+   "set": 1,
+   "score1": 1,
+   "score2": 0,
+   "sets1": 0,
+   "sets2": 0,
+   "serve": 1
+  },
+  {
+   "t": 0.887,
+   "set": 1,
+   "score1": 1,
+   "score2": 1,
+   "sets1": 0,
+   "sets2": 0,
+   "serve": 2
+  },
+  {
+   "t": 1.331,
+   "set": 1,
+   "score1": 2,
+   "score2": 1,
+   "sets1": 0,
+   "sets2": 0,
+   "serve": 1
+  },
+  {
+   "t": 1.774,
+   "set": 1,
+   "score1": 3,
+   "score2": 1,
+   "sets1": 0,
+   "sets2": 0,
+   "serve": 1
+  },
+  {
+   "t": 2.218,
+   "set": 1,
+   "score1": 3,
+   "score2": 2,
+   "sets1": 0,
+   "sets2": 0,
+   "serve": 2
+  },
+  {
+   "t": 2.661,
+   "set": 1,
+   "score1": 3,
+   "score2": 3,
+   "sets1": 0,
+   "sets2": 0,
+   "serve": 2
+  },
+  {
+   "t": 3.105,
+   "set": 1,
+   "score1": 3,
+   "score2": 4,
+   "sets1": 0,
+   "sets2": 0,
+   "serve": 2
+  },
+  {
+   "t": 3.548,
+   "set": 1,
+   "score1": 4,
+   "score2": 4,
+   "sets1": 0,
+   "sets2": 0,
+   "serve": 1
+  },
+  {
+   "t": 3.992,
+   "set": 1,
+   "score1": 5,
+   "score2": 4,
+   "sets1": 0,
+   "sets2": 0,
+   "serve": 1
+  },
+  {
+   "t": 4.435,
+   "set": 1,
+   "score1": 6,
+   "score2": 4,
+   "sets1": 0,
+   "sets2": 0,
+   "serve": 1
+  },
+  {
+   "t": 4.879,
+   "set": 1,
+   "score1": 7,
+   "score2": 4,
+   "sets1": 0,
+   "sets2": 0,
+   "serve": 1
+  },
+  {
+   "t": 5.323,
+   "set": 1,
+   "score1": 7,
+   "score2": 5,
+   "sets1": 0,
+   "sets2": 0,
+   "serve": 2
+  },
+  {
+   "t": 5.766,
+   "set": 1,
+   "score1": 8,
+   "score2": 5,
+   "sets1": 0,
+   "sets2": 0,
+   "serve": 1
+  },
+  {
+   "t": 6.21,
+   "set": 1,
+   "score1": 9,
+   "score2": 5,
+   "sets1": 0,
+   "sets2": 0,
+   "serve": 1
+  },
+  {
+   "t": 6.653,
+   "set": 1,
+   "score1": 9,
+   "score2": 6,
+   "sets1": 0,
+   "sets2": 0,
+   "serve": 2
+  },
+  {
+   "t": 7.097,
+   "set": 1,
+   "score1": 9,
+   "score2": 7,
+   "sets1": 0,
+   "sets2": 0,
+   "serve": 2
+  },
+  {
+   "t": 7.54,
+   "set": 1,
+   "score1": 10,
+   "score2": 7,
+   "sets1": 0,
+   "sets2": 0,
+   "serve": 1
+  },
+  {
+   "t": 7.984,
+   "set": 1,
+   "score1": 11,
+   "score2": 7,
+   "sets1": 0,
+   "sets2": 0,
+   "serve": 1
+  },
+  {
+   "t": 8.427,
+   "set": 1,
+   "score1": 12,
+   "score2": 7,
+   "sets1": 0,
+   "sets2": 0,
+   "serve": 1
+  },
+  {
+   "t": 8.871,
+   "set": 1,
+   "score1": 13,
+   "score2": 7,
+   "sets1": 0,
+   "sets2": 0,
+   "serve": 1
+  },
+  {
+   "t": 9.315,
+   "set": 1,
+   "score1": 13,
+   "score2": 8,
+   "sets1": 0,
+   "sets2": 0,
+   "serve": 2
+  },
+  {
+   "t": 9.758,
+   "set": 1,
+   "score1": 14,
+   "score2": 8,
+   "sets1": 0,
+   "sets2": 0,
+   "serve": 1
+  },
+  {
+   "t": 10.202,
+   "set": 1,
+   "score1": 14,
+   "score2": 9,
+   "sets1": 0,
+   "sets2": 0,
+   "serve": 2
+  },
+  {
+   "t": 10.645,
+   "set": 1,
+   "score1": 14,
+   "score2": 10,
+   "sets1": 0,
+   "sets2": 0,
+   "serve": 2
+  },
+  {
+   "t": 11.089,
+   "set": 1,
+   "score1": 15,
+   "score2": 10,
+   "sets1": 0,
+   "sets2": 0,
+   "serve": 1
+  },
+  {
+   "t": 11.532,
+   "set": 1,
+   "score1": 16,
+   "score2": 10,
+   "sets1": 0,
+   "sets2": 0,
+   "serve": 1
+  },
+  {
+   "t": 11.976,
+   "set": 1,
+   "score1": 17,
+   "score2": 10,
+   "sets1": 0,
+   "sets2": 0,
+   "serve": 1
+  },
+  {
+   "t": 12.419,
+   "set": 1,
+   "score1": 17,
+   "score2": 11,
+   "sets1": 0,
+   "sets2": 0,
+   "serve": 2
+  },
+  {
+   "t": 12.863,
+   "set": 1,
+   "score1": 18,
+   "score2": 11,
+   "sets1": 0,
+   "sets2": 0,
+   "serve": 1
+  },
+  {
+   "t": 13.306,
+   "set": 1,
+   "score1": 19,
+   "score2": 11,
+   "sets1": 0,
+   "sets2": 0,
+   "serve": 1
+  },
+  {
+   "t": 13.75,
+   "set": 1,
+   "score1": 20,
+   "score2": 11,
+   "sets1": 0,
+   "sets2": 0,
+   "serve": 1
+  },
+  {
+   "t": 14.194,
+   "set": 1,
+   "score1": 21,
+   "score2": 11,
+   "sets1": 0,
+   "sets2": 0,
+   "serve": 1
+  },
+  {
+   "t": 14.637,
+   "set": 1,
+   "score1": 21,
+   "score2": 12,
+   "sets1": 0,
+   "sets2": 0,
+   "serve": 2
+  },
+  {
+   "t": 15.081,
+   "set": 1,
+   "score1": 22,
+   "score2": 12,
+   "sets1": 0,
+   "sets2": 0,
+   "serve": 1
+  },
+  {
+   "t": 15.524,
+   "set": 1,
+   "score1": 22,
+   "score2": 13,
+   "sets1": 0,
+   "sets2": 0,
+   "serve": 2
+  },
+  {
+   "t": 15.968,
+   "set": 1,
+   "score1": 22,
+   "score2": 14,
+   "sets1": 0,
+   "sets2": 0,
+   "serve": 2
+  },
+  {
+   "t": 16.411,
+   "set": 1,
+   "score1": 22,
+   "score2": 15,
+   "sets1": 0,
+   "sets2": 0,
+   "serve": 2
+  },
+  {
+   "t": 16.855,
+   "set": 1,
+   "score1": 23,
+   "score2": 15,
+   "sets1": 0,
+   "sets2": 0,
+   "serve": 1
+  },
+  {
+   "t": 17.298,
+   "set": 1,
+   "score1": 24,
+   "score2": 15,
+   "sets1": 0,
+   "sets2": 0,
+   "serve": 1
+  },
+  {
+   "t": 17.742,
+   "set": 1,
+   "score1": 24,
+   "score2": 16,
+   "sets1": 0,
+   "sets2": 0,
+   "serve": 2
+  },
+  {
+   "t": 18.185,
+   "set": 1,
+   "score1": 24,
+   "score2": 17,
+   "sets1": 0,
+   "sets2": 0,
+   "serve": 2
+  },
+  {
+   "t": 18.629,
+   "set": 1,
+   "score1": 24,
+   "score2": 18,
+   "sets1": 0,
+   "sets2": 0,
+   "serve": 2
+  },
+  {
+   "t": 19.073,
+   "set": 1,
+   "score1": 24,
+   "score2": 19,
+   "sets1": 0,
+   "sets2": 0,
+   "serve": 2
+  },
+  {
+   "t": 19.516,
+   "set": 1,
+   "score1": 24,
+   "score2": 20,
+   "sets1": 0,
+   "sets2": 0,
+   "serve": 2
+  },
+  {
+   "t": 19.96,
+   "set": 1,
+   "score1": 24,
+   "score2": 21,
+   "sets1": 0,
+   "sets2": 0,
+   "serve": 2
+  },
+  {
+   "t": 20.403,
+   "set": 1,
+   "score1": 25,
+   "score2": 21,
+   "sets1": 1,
+   "sets2": 0,
+   "serve": 1
+  },
+  {
+   "t": 20.847,
+   "set": 2,
+   "score1": 0,
+   "score2": 0,
+   "sets1": 1,
+   "sets2": 0,
+   "serve": 0
+  },
+  {
+   "t": 21.29,
+   "set": 2,
+   "score1": 0,
+   "score2": 1,
+   "sets1": 1,
+   "sets2": 0,
+   "serve": 2
+  },
+  {
+   "t": 21.734,
+   "set": 2,
+   "score1": 0,
+   "score2": 2,
+   "sets1": 1,
+   "sets2": 0,
+   "serve": 2
+  },
+  {
+   "t": 22.177,
+   "set": 2,
+   "score1": 1,
+   "score2": 2,
+   "sets1": 1,
+   "sets2": 0,
+   "serve": 1
+  },
+  {
+   "t": 22.621,
+   "set": 2,
+   "score1": 2,
+   "score2": 2,
+   "sets1": 1,
+   "sets2": 0,
+   "serve": 1
+  },
+  {
+   "t": 23.065,
+   "set": 2,
+   "score1": 2,
+   "score2": 3,
+   "sets1": 1,
+   "sets2": 0,
+   "serve": 2
+  },
+  {
+   "t": 23.508,
+   "set": 2,
+   "score1": 2,
+   "score2": 4,
+   "sets1": 1,
+   "sets2": 0,
+   "serve": 2
+  },
+  {
+   "t": 23.952,
+   "set": 2,
+   "score1": 3,
+   "score2": 4,
+   "sets1": 1,
+   "sets2": 0,
+   "serve": 1
+  },
+  {
+   "t": 24.395,
+   "set": 2,
+   "score1": 4,
+   "score2": 4,
+   "sets1": 1,
+   "sets2": 0,
+   "serve": 1
+  },
+  {
+   "t": 24.839,
+   "set": 2,
+   "score1": 4,
+   "score2": 5,
+   "sets1": 1,
+   "sets2": 0,
+   "serve": 2
+  },
+  {
+   "t": 25.282,
+   "set": 2,
+   "score1": 5,
+   "score2": 5,
+   "sets1": 1,
+   "sets2": 0,
+   "serve": 1
+  },
+  {
+   "t": 25.726,
+   "set": 2,
+   "score1": 6,
+   "score2": 5,
+   "sets1": 1,
+   "sets2": 0,
+   "serve": 1
+  },
+  {
+   "t": 26.169,
+   "set": 2,
+   "score1": 7,
+   "score2": 5,
+   "sets1": 1,
+   "sets2": 0,
+   "serve": 1
+  },
+  {
+   "t": 26.613,
+   "set": 2,
+   "score1": 7,
+   "score2": 6,
+   "sets1": 1,
+   "sets2": 0,
+   "serve": 2
+  },
+  {
+   "t": 27.056,
+   "set": 2,
+   "score1": 8,
+   "score2": 6,
+   "sets1": 1,
+   "sets2": 0,
+   "serve": 1
+  },
+  {
+   "t": 27.5,
+   "set": 2,
+   "score1": 8,
+   "score2": 7,
+   "sets1": 1,
+   "sets2": 0,
+   "serve": 2
+  },
+  {
+   "t": 27.944,
+   "set": 2,
+   "score1": 8,
+   "score2": 8,
+   "sets1": 1,
+   "sets2": 0,
+   "serve": 2
+  },
+  {
+   "t": 28.387,
+   "set": 2,
+   "score1": 8,
+   "score2": 9,
+   "sets1": 1,
+   "sets2": 0,
+   "serve": 2
+  },
+  {
+   "t": 28.831,
+   "set": 2,
+   "score1": 9,
+   "score2": 9,
+   "sets1": 1,
+   "sets2": 0,
+   "serve": 1
+  },
+  {
+   "t": 29.274,
+   "set": 2,
+   "score1": 9,
+   "score2": 10,
+   "sets1": 1,
+   "sets2": 0,
+   "serve": 2
+  },
+  {
+   "t": 29.718,
+   "set": 2,
+   "score1": 9,
+   "score2": 11,
+   "sets1": 1,
+   "sets2": 0,
+   "serve": 2
+  },
+  {
+   "t": 30.161,
+   "set": 2,
+   "score1": 9,
+   "score2": 12,
+   "sets1": 1,
+   "sets2": 0,
+   "serve": 2
+  },
+  {
+   "t": 30.605,
+   "set": 2,
+   "score1": 10,
+   "score2": 12,
+   "sets1": 1,
+   "sets2": 0,
+   "serve": 1
+  },
+  {
+   "t": 31.048,
+   "set": 2,
+   "score1": 11,
+   "score2": 12,
+   "sets1": 1,
+   "sets2": 0,
+   "serve": 1
+  },
+  {
+   "t": 31.492,
+   "set": 2,
+   "score1": 12,
+   "score2": 12,
+   "sets1": 1,
+   "sets2": 0,
+   "serve": 1
+  },
+  {
+   "t": 31.935,
+   "set": 2,
+   "score1": 12,
+   "score2": 13,
+   "sets1": 1,
+   "sets2": 0,
+   "serve": 2
+  },
+  {
+   "t": 32.379,
+   "set": 2,
+   "score1": 13,
+   "score2": 13,
+   "sets1": 1,
+   "sets2": 0,
+   "serve": 1
+  },
+  {
+   "t": 32.823,
+   "set": 2,
+   "score1": 13,
+   "score2": 14,
+   "sets1": 1,
+   "sets2": 0,
+   "serve": 2
+  },
+  {
+   "t": 33.266,
+   "set": 2,
+   "score1": 13,
+   "score2": 15,
+   "sets1": 1,
+   "sets2": 0,
+   "serve": 2
+  },
+  {
+   "t": 33.71,
+   "set": 2,
+   "score1": 14,
+   "score2": 15,
+   "sets1": 1,
+   "sets2": 0,
+   "serve": 1
+  },
+  {
+   "t": 34.153,
+   "set": 2,
+   "score1": 15,
+   "score2": 15,
+   "sets1": 1,
+   "sets2": 0,
+   "serve": 1
+  },
+  {
+   "t": 34.597,
+   "set": 2,
+   "score1": 15,
+   "score2": 16,
+   "sets1": 1,
+   "sets2": 0,
+   "serve": 2
+  },
+  {
+   "t": 35.04,
+   "set": 2,
+   "score1": 15,
+   "score2": 17,
+   "sets1": 1,
+   "sets2": 0,
+   "serve": 2
+  },
+  {
+   "t": 35.484,
+   "set": 2,
+   "score1": 15,
+   "score2": 18,
+   "sets1": 1,
+   "sets2": 0,
+   "serve": 2
+  },
+  {
+   "t": 35.927,
+   "set": 2,
+   "score1": 16,
+   "score2": 18,
+   "sets1": 1,
+   "sets2": 0,
+   "serve": 1
+  },
+  {
+   "t": 36.371,
+   "set": 2,
+   "score1": 16,
+   "score2": 19,
+   "sets1": 1,
+   "sets2": 0,
+   "serve": 2
+  },
+  {
+   "t": 36.815,
+   "set": 2,
+   "score1": 16,
+   "score2": 20,
+   "sets1": 1,
+   "sets2": 0,
+   "serve": 2
+  },
+  {
+   "t": 37.258,
+   "set": 2,
+   "score1": 16,
+   "score2": 21,
+   "sets1": 1,
+   "sets2": 0,
+   "serve": 2
+  },
+  {
+   "t": 37.702,
+   "set": 2,
+   "score1": 17,
+   "score2": 21,
+   "sets1": 1,
+   "sets2": 0,
+   "serve": 1
+  },
+  {
+   "t": 38.145,
+   "set": 2,
+   "score1": 18,
+   "score2": 21,
+   "sets1": 1,
+   "sets2": 0,
+   "serve": 1
+  },
+  {
+   "t": 38.589,
+   "set": 2,
+   "score1": 19,
+   "score2": 21,
+   "sets1": 1,
+   "sets2": 0,
+   "serve": 1
+  },
+  {
+   "t": 39.032,
+   "set": 2,
+   "score1": 19,
+   "score2": 22,
+   "sets1": 1,
+   "sets2": 0,
+   "serve": 2
+  },
+  {
+   "t": 39.476,
+   "set": 2,
+   "score1": 20,
+   "score2": 22,
+   "sets1": 1,
+   "sets2": 0,
+   "serve": 1
+  },
+  {
+   "t": 39.919,
+   "set": 2,
+   "score1": 21,
+   "score2": 22,
+   "sets1": 1,
+   "sets2": 0,
+   "serve": 1
+  },
+  {
+   "t": 40.363,
+   "set": 2,
+   "score1": 21,
+   "score2": 23,
+   "sets1": 1,
+   "sets2": 0,
+   "serve": 2
+  },
+  {
+   "t": 40.806,
+   "set": 2,
+   "score1": 22,
+   "score2": 23,
+   "sets1": 1,
+   "sets2": 0,
+   "serve": 1
+  },
+  {
+   "t": 41.25,
+   "set": 2,
+   "score1": 22,
+   "score2": 24,
+   "sets1": 1,
+   "sets2": 0,
+   "serve": 2
+  },
+  {
+   "t": 41.694,
+   "set": 2,
+   "score1": 23,
+   "score2": 24,
+   "sets1": 1,
+   "sets2": 0,
+   "serve": 1
+  },
+  {
+   "t": 42.137,
+   "set": 2,
+   "score1": 23,
+   "score2": 25,
+   "sets1": 1,
+   "sets2": 1,
+   "serve": 2
+  },
+  {
+   "t": 42.581,
+   "set": 3,
+   "score1": 0,
+   "score2": 0,
+   "sets1": 1,
+   "sets2": 1,
+   "serve": 0
+  },
+  {
+   "t": 43.024,
+   "set": 3,
+   "score1": 0,
+   "score2": 1,
+   "sets1": 1,
+   "sets2": 1,
+   "serve": 2
+  },
+  {
+   "t": 43.468,
+   "set": 3,
+   "score1": 0,
+   "score2": 2,
+   "sets1": 1,
+   "sets2": 1,
+   "serve": 2
+  },
+  {
+   "t": 43.911,
+   "set": 3,
+   "score1": 0,
+   "score2": 3,
+   "sets1": 1,
+   "sets2": 1,
+   "serve": 2
+  },
+  {
+   "t": 44.355,
+   "set": 3,
+   "score1": 1,
+   "score2": 3,
+   "sets1": 1,
+   "sets2": 1,
+   "serve": 1
+  },
+  {
+   "t": 44.798,
+   "set": 3,
+   "score1": 1,
+   "score2": 4,
+   "sets1": 1,
+   "sets2": 1,
+   "serve": 2
+  },
+  {
+   "t": 45.242,
+   "set": 3,
+   "score1": 1,
+   "score2": 5,
+   "sets1": 1,
+   "sets2": 1,
+   "serve": 2
+  },
+  {
+   "t": 45.685,
+   "set": 3,
+   "score1": 2,
+   "score2": 5,
+   "sets1": 1,
+   "sets2": 1,
+   "serve": 1
+  },
+  {
+   "t": 46.129,
+   "set": 3,
+   "score1": 3,
+   "score2": 5,
+   "sets1": 1,
+   "sets2": 1,
+   "serve": 1
+  },
+  {
+   "t": 46.573,
+   "set": 3,
+   "score1": 3,
+   "score2": 6,
+   "sets1": 1,
+   "sets2": 1,
+   "serve": 2
+  },
+  {
+   "t": 47.016,
+   "set": 3,
+   "score1": 4,
+   "score2": 6,
+   "sets1": 1,
+   "sets2": 1,
+   "serve": 1
+  },
+  {
+   "t": 47.46,
+   "set": 3,
+   "score1": 4,
+   "score2": 7,
+   "sets1": 1,
+   "sets2": 1,
+   "serve": 2
+  },
+  {
+   "t": 47.903,
+   "set": 3,
+   "score1": 5,
+   "score2": 7,
+   "sets1": 1,
+   "sets2": 1,
+   "serve": 1
+  },
+  {
+   "t": 48.347,
+   "set": 3,
+   "score1": 6,
+   "score2": 7,
+   "sets1": 1,
+   "sets2": 1,
+   "serve": 1
+  },
+  {
+   "t": 48.79,
+   "set": 3,
+   "score1": 6,
+   "score2": 8,
+   "sets1": 1,
+   "sets2": 1,
+   "serve": 2
+  },
+  {
+   "t": 49.234,
+   "set": 3,
+   "score1": 7,
+   "score2": 8,
+   "sets1": 1,
+   "sets2": 1,
+   "serve": 1
+  },
+  {
+   "t": 49.677,
+   "set": 3,
+   "score1": 7,
+   "score2": 9,
+   "sets1": 1,
+   "sets2": 1,
+   "serve": 2
+  },
+  {
+   "t": 50.121,
+   "set": 3,
+   "score1": 8,
+   "score2": 9,
+   "sets1": 1,
+   "sets2": 1,
+   "serve": 1
+  },
+  {
+   "t": 50.565,
+   "set": 3,
+   "score1": 9,
+   "score2": 9,
+   "sets1": 1,
+   "sets2": 1,
+   "serve": 1
+  },
+  {
+   "t": 51.008,
+   "set": 3,
+   "score1": 9,
+   "score2": 10,
+   "sets1": 1,
+   "sets2": 1,
+   "serve": 2
+  },
+  {
+   "t": 51.452,
+   "set": 3,
+   "score1": 9,
+   "score2": 11,
+   "sets1": 1,
+   "sets2": 1,
+   "serve": 2
+  },
+  {
+   "t": 51.895,
+   "set": 3,
+   "score1": 10,
+   "score2": 11,
+   "sets1": 1,
+   "sets2": 1,
+   "serve": 1
+  },
+  {
+   "t": 52.339,
+   "set": 3,
+   "score1": 11,
+   "score2": 11,
+   "sets1": 1,
+   "sets2": 1,
+   "serve": 1
+  },
+  {
+   "t": 52.782,
+   "set": 3,
+   "score1": 12,
+   "score2": 11,
+   "sets1": 1,
+   "sets2": 1,
+   "serve": 1
+  },
+  {
+   "t": 53.226,
+   "set": 3,
+   "score1": 12,
+   "score2": 12,
+   "sets1": 1,
+   "sets2": 1,
+   "serve": 2
+  },
+  {
+   "t": 53.669,
+   "set": 3,
+   "score1": 13,
+   "score2": 12,
+   "sets1": 1,
+   "sets2": 1,
+   "serve": 1
+  },
+  {
+   "t": 54.113,
+   "set": 3,
+   "score1": 14,
+   "score2": 12,
+   "sets1": 1,
+   "sets2": 1,
+   "serve": 1
+  },
+  {
+   "t": 54.556,
+   "set": 3,
+   "score1": 15,
+   "score2": 12,
+   "sets1": 2,
+   "sets2": 1,
+   "serve": 1
+  },
+  {
+   "t": 55.0,
+   "set": 3,
+   "score1": 15,
+   "score2": 12,
+   "sets1": 2,
+   "sets2": 1,
+   "serve": 1
+  }
+ ]
+}
