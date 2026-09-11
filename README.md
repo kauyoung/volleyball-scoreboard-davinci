@@ -45,29 +45,38 @@ Fusion composition until final render.
 
 ## What's in this repo
 
+```
+├── resolve-scripts/     Lua scripts run from DaVinci Resolve's Console
+├── footage-conversion/  Windows HEVC→H.264 converter (.bat + .ps1)
+├── scorekeeper/         The scorekeeping web app
+├── assets/              Serve-ball icon used by the overlay
+└── docs/                Manual walkthrough + a sample match file
+```
+
 | File | What it does |
 |---|---|
-| `convert-footage.bat` | Double-click-to-run converter. Finds the newest dated match folder, converts every `DJI_*.mov`/`.mp4` from HEVC to H.264 (hardware-accelerated), preserves exact filenames, keeps the originals in a `raw_originals` backup folder. Safe to re-run — skips anything already converted. |
-| `convert-one.ps1` | Helper script `convert-footage.bat` calls per clip — shows a live percent/ETA progress bar during conversion. Not meant to be run by hand. |
-| `assemble-match.lua` | Run once per match from Resolve's Console. Imports every clip from the newest match folder and builds a gap-free timeline at the right resolution/frame rate. Prints a verification report — total length vs. sum of source clips, and a chapter-order sanity check — so a bad import shows up as text instead of a silent, drifting overlay. |
-| `build-scoreboard.lua` | Builds the entire scoreboard's Fusion node graph from scratch: bar, score cells, team names, sets, serve indicator, drop shadow. Run once per match (or once per season if you reuse the composition as a template). |
-| `apply-match.lua` | Reads a match JSON file (see below) and writes keyframes onto the nodes `build-scoreboard.lua` created — score, sets, set number, and serve indicator, all as instant "step" changes rather than animated ramps. |
-| `run-overlay.lua` | Convenience wrapper — runs `build-scoreboard.lua` then `apply-match.lua` back to back. |
-| `volleyball-scorekeeper.html` | Self-contained scorekeeping web app (works live at the gym on a phone, or on a laptop during editing while replaying the assembled footage). Tracks score, sets, serve, and timestamps every event automatically. Exports the JSON file the Lua scripts consume. |
-| `volleyball-serve-icon.png` | The serve-indicator icon `build-scoreboard.lua` places on whichever team is serving. |
-| `fusion-scoreboard-walkthrough.md` | Manual, click-by-click guide to building the same scoreboard graph by hand in Fusion — useful for understanding what the script automates, or for customizing the look yourself. |
-| `match-sample.json` | A synthetic example match file (not a real game) showing the data format `apply-match.lua` expects. |
+| `footage-conversion/convert-footage.bat` | Double-click-to-run converter. Finds the newest dated match folder, converts every `DJI_*.mov`/`.mp4` from HEVC to H.264 (hardware-accelerated), preserves exact filenames, keeps the originals in a `raw_originals` backup folder. Safe to re-run — skips anything already converted. |
+| `footage-conversion/convert-one.ps1` | Helper script `convert-footage.bat` calls per clip — shows a live percent/ETA progress bar during conversion. Not meant to be run by hand. |
+| `resolve-scripts/assemble-match.lua` | Run once per match from Resolve's Console. Imports every clip from the newest match folder and builds a gap-free timeline at the right resolution/frame rate. Prints a verification report — total length vs. sum of source clips, and a chapter-order sanity check — so a bad import shows up as text instead of a silent, drifting overlay. |
+| `resolve-scripts/build-scoreboard.lua` | Builds the entire scoreboard's Fusion node graph from scratch: bar, score cells, team names, sets, serve indicator, drop shadow. Run once per match (or once per season if you reuse the composition as a template). |
+| `resolve-scripts/apply-match.lua` | Reads a match JSON file (see below) and writes keyframes onto the nodes `build-scoreboard.lua` created — score, sets, set number, and serve indicator, all as instant "step" changes rather than animated ramps. |
+| `resolve-scripts/run-overlay.lua` | Convenience wrapper — runs `build-scoreboard.lua` then `apply-match.lua` back to back. |
+| `scorekeeper/volleyball-scorekeeper.html` | Self-contained scorekeeping web app (works live at the gym on a phone, or on a laptop during editing while replaying the assembled footage). Tracks score, sets, serve, and timestamps every event automatically. Exports the JSON file the Lua scripts consume. |
+| `assets/volleyball-serve-icon.png` | The serve-indicator icon `build-scoreboard.lua` places on whichever team is serving. |
+| `docs/fusion-scoreboard-walkthrough.md` | Manual, click-by-click guide to building the same scoreboard graph by hand in Fusion — useful for understanding what the script automates, or for customizing the look yourself. |
+| `docs/match-sample.json` | A synthetic example match file (not a real game) showing the data format `apply-match.lua` expects. |
 
 ## Setup
 
-Each Lua script has a small `CONFIG` section near the top. Before running
-anything, edit these to match your own machine:
+Copy the contents of `resolve-scripts/` to wherever you want to run them
+from (they don't need to stay inside a cloned repo). Each script has a
+small `CONFIG` section near the top — edit these to match your own machine:
 
 - **`assemble-match.lua`** — `CLIP_ROOT` (the folder containing your dated
-  match folders) and `WORK_DIR` (where these scripts live, used for logs
-  and the printed next-step commands).
+  match folders) and `WORK_DIR` (where you copied these scripts to, used
+  for logs and the printed next-step commands).
 - **`apply-match.lua`** — same `MATCH_ROOT` / `WORK_DIR` idea.
-- **`run-overlay.lua`** — `BASE`, the folder these scripts live in.
+- **`run-overlay.lua`** — `BASE`, the folder you copied these scripts to.
 - **`build-scoreboard.lua`** — `SERVE_ICON_PATH` (point this at wherever
   you save `volleyball-serve-icon.png` — somewhere permanent, not a
   Downloads folder that gets cleared) and `TEAM1_NAME` / `TEAM2_NAME`.
@@ -82,7 +91,7 @@ to find every line that needs a personal value.
    timeline to match).
 2. **Convert** (only needed if your camera shoots HEVC): copy the card into
    a dated folder under your configured match root, double-click
-   `convert-footage.bat`.
+   `footage-conversion/convert-footage.bat`.
 3. **Assemble**: open a new, empty Resolve project (frame rate can't change
    once a timeline exists) and run `assemble-match.lua` from the Console.
    Read its verification output before continuing — a reported gap or
@@ -92,7 +101,7 @@ to find every line that needs a personal value.
    which looks similar but doesn't carry a Fusion page comp), then resize
    it to span the whole timeline. Resolve's scripting API can't do this
    part reliably, so it's a manual step.
-5. **Score the match**: open `volleyball-scorekeeper.html` and tap along —
+5. **Score the match**: open `scorekeeper/volleyball-scorekeeper.html` and tap along —
    either live at the game (tap Start the instant you press record) or
    later during editing (play the assembled timeline back at 1x speed and
    tap along to it; use the app's Camera Stopped/Restarted buttons to
