@@ -37,10 +37,10 @@
 -- Keep one folder per match inside CLIP_ROOT, named by date:
 --
 --   D:\Volleyball Matches\
---       2026-08-09 vs Away Team\
+--       2026-08-09 vs Durham Attack\
 --           DJI_0001.MP4
 --           DJI_0002.MP4
---       2026-08-16 vs Another Team\
+--       2026-08-16 vs Riverside\
 --           ...
 --
 -- Leave CLIP_FOLDER empty and the script uses the NEWEST subfolder, so the only
@@ -388,6 +388,19 @@ else
   say(" Check Project Settings before adding the overlay — the scoreboard")
   say(" scales proportionally, but the drop shadow is measured in pixels and")
   say(" will look wrong at another resolution.")
+end
+
+-- Playback frame rate is a separate project setting that defaults to 24 and
+-- can't be changed from a script (SetSetting refuses it), so flag it loudly.
+local pbRate = project:GetSetting("timelinePlaybackFrameRate")
+if tostring(pbRate):match("^" .. FRAME_RATE) then
+  say(" Playback frame rate: " .. tostring(pbRate) .. " (OK)")
+else
+  say("")
+  say(string.format(" *** PLAYBACK FRAME RATE IS %s, NOT %s ***", tostring(pbRate), FRAME_RATE))
+  say(" Preview will play in slow motion (exports are fine). Fix it now:")
+  say(" Project Settings (Shift+9) -> Master Settings -> Playback frame rate -> "
+      .. FRAME_RATE .. " -> Save")
 end
 
 say("")

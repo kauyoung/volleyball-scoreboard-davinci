@@ -42,11 +42,26 @@
 
 local SERVE_ICON_PATH = [[C:\Users\YOURNAME\Documents\Resolve Assets\volleyball-serve-icon.png]]
 
-local TEAM1_NAME = "Home Team"
-local TEAM2_NAME = "Opponent"
+-- auto-overlay.lua fills these in from the match JSON automatically (via the
+-- SCOREBOARD_TEAM1/2 globals). The values below are only used when this
+-- script is run on its own.
+local TEAM1_NAME = rawget(_G, "SCOREBOARD_TEAM1") or "Home Team"
+local TEAM2_NAME = rawget(_G, "SCOREBOARD_TEAM2") or "Opponent"
 
 local FONT       = "Gotham"
 local FONT_STYLE = "Medium"
+
+-- Team names only: Gotham Narrow fits ~20% more characters in the same space
+-- and stays in the same family as everything else on the bar. (Narrow is
+-- installed in Bold only.) Keep in step with NAME_CHAR_W in apply-match.lua.
+local NAME_FONT       = "Gotham Narrow"
+local NAME_FONT_STYLE = "Bold"
+
+-- Width of the whole bar, as a fraction of frame width BEFORE OVERALL_SIZE.
+-- Was 0.75; 0.85 gives each team-name cell 0.05 more (~135px at 4K after the
+-- 0.70 scale). The score/sets cells in the middle don't move — only the two
+-- outer name cells grow. Keep in step with BAR_WIDTH in apply-match.lua.
+local BAR_WIDTH = 0.85
 
 local CLEAR_EXISTING = true    -- true = delete every node except MediaOut1 first
 
@@ -62,9 +77,9 @@ local OVERALL_SIZE = 0.70
 -- ball measured ~80% of the team name's cap height; 0.14 brings it level.
 local SERVE_SIZE = 0.14
 
--- Team colours — change these to your own
+-- Club colours (from the brief — locked, don't change)
 local GREEN = { 0.439, 0.835, 0.286 }   -- #70D549  Team 1 (example)
-local BLUE  = { 0.039, 0.518, 1.000 }   -- #0A84FF  Team 2 (example)
+local BLUE  = { 0.039, 0.518, 1.000 }   -- #0A84FF  opponent
 local BLACK = { 0.008, 0.012, 0.012 }   -- #020303  club black
 local WHITE = { 1.0,   1.0,   1.0   }
 
@@ -228,7 +243,7 @@ local mediaOut = comp:FindTool("MediaOut1")
 
 -- Step 2 — the bar --------------------------------------------------------
 local top = plate("BarBG", BLACK, 0.74,
-                  { w = 0.75, h = 0.115, x = 0.5, y = 0.115, r = 0.50 }, COL, ROW)
+                  { w = BAR_WIDTH, h = 0.115, x = 0.5, y = 0.115, r = 0.50 }, COL, ROW)
 
 if not top then
   comp:EndUndo(true) comp:Unlock()
@@ -266,7 +281,9 @@ local function place(element, name, blend)
 end
 
 -- Step 3 — score cell, hairline, separators -------------------------------
-place(plate("ScoreCellBG", WHITE, 0.055,
+-- White at 0.12 over the black bar reads as a lighter grey panel, so the live
+-- score stands out from the name/sets cells. (Was 0.055 — barely visible.)
+place(plate("ScoreCellBG", WHITE, 0.12,
       { w = 0.134, h = 0.115, x = 0.5, y = 0.115, r = 0 }, COL + 1, ROW + 2))
 
 -- Divider between the two live scores. Raised from 0.22 to 0.50 and thickened
@@ -296,24 +313,24 @@ place(plate("SepNameRight", WHITE, 0.16,
 
 -- Step 4 — team accent bars -----------------------------------------------
 place(plate("AccentLeft", GREEN, 1.0,
-      { w = 0.0016, h = 0.052, x = 0.1335, y = 0.115, r = 1.0 }, COL + 5, ROW + 2))
+      { w = 0.0016, h = 0.052, x = 0.5 - BAR_WIDTH / 2 + 0.0085, y = 0.115, r = 1.0 }, COL + 5, ROW + 2))
 
 place(plate("AccentRight", BLUE, 1.0,
-      { w = 0.0016, h = 0.052, x = 0.8665, y = 0.115, r = 1.0 }, COL + 6, ROW + 2))
+      { w = 0.0016, h = 0.052, x = 0.5 + BAR_WIDTH / 2 - 0.0085, y = 0.115, r = 1.0 }, COL + 6, ROW + 2))
 
 -- Step 5 — text ------------------------------------------------------------
 -- TEAM NAMES ---------------------------------------------------------------
 -- Text+ ignores a left/right anchor when it's set from a script, so both names
 -- are centre-anchored. A fixed centre gives UNEQUAL margins the moment the two
--- names differ in length — a long name sat nearer its edge than a short one
+-- names differ in length — "Home Team" sat nearer its edge than "Opponent"
 -- did. So instead of hard-coding the centre, we work back from the outer edge:
 -- estimate the name's width, then place its centre so the OUTER edge always
 -- lands NAME_MARGIN in from the end of the bar. Both sides then match, whatever
 -- the opponent is called.
 local NAME_SIZE   = 0.026
-local NAME_CHAR_W = 0.0138   -- Gotham Medium at NAME_SIZE, width of an average character
+local NAME_CHAR_W = 0.0115   -- Gotham Narrow Bold at NAME_SIZE, measured on a 4K render (Gotham Medium was 0.0138)
 local NAME_MARGIN = 0.020    -- gap from the end of the bar to the start of the text
-local BAR_L, BAR_R = 0.125, 0.875
+local BAR_L, BAR_R = 0.5 - BAR_WIDTH / 2, 0.5 + BAR_WIDTH / 2
 
 -- Manual trim, if a particular pair of names still looks lopsided to the eye.
 -- Positive numbers move the name to the RIGHT. Units are fractions of frame
@@ -321,8 +338,11 @@ local BAR_L, BAR_R = 0.125, 0.875
 -- -0.003 shifts Team2Name 8px left on the finished 4K frame. Note the division:
 -- these units are applied BEFORE the MasterSize Transform, so they get scaled by
 -- OVERALL_SIZE. 8 / (3840 * 0.70) = 0.003, not 8 / 3840.
-local NAME1_NUDGE = 0.0
-local NAME2_NUDGE = -0.003
+-- 2026-09-25: names are now edge-anchored (see nameAnchor below), so these only
+-- correct Gotham's side bearings. Measured on a 4K render: left gap 32px, right
+-- 36px with no nudge; these bring both to 40px from their accent lines.
+local NAME1_NUDGE = 0.0030
+local NAME2_NUDGE = -0.0015
 
 -- Gotham is proportional, so counting characters and multiplying by one average
 -- width is too crude: a space is roughly 40% of an average character and "l"/"i"
@@ -330,7 +350,7 @@ local NAME2_NUDGE = -0.003
 -- "Home Team" (which contains a space) measure WIDER than it really is and
 -- "Opponent" (which ends in a narrow "t") measure NARROWER — and because the two
 -- names sit on opposite edges, those two errors push in opposite directions.
--- Net effect: one name drifted away from its edge while the other crept
+-- Net effect: Home Team drifted away from its edge while Opponent crept
 -- toward its own. Weighting the characters removes most of that.
 local CHAR_W = {
   [" "] = 0.42,
@@ -349,10 +369,20 @@ local function nameWidth(str)
   return units * NAME_CHAR_W
 end
 
-local function nameCentre(str, side)
+-- The old note above about Text+ ignoring anchors no longer holds in Resolve
+-- 21: HorizontalLeftCenterRight (-1 left / 1 right) set from a script works.
+-- So each name is anchored on its OUTER edge — the gap to the end of the bar
+-- is exact whatever the name, with no width guessing. nameWidth() is now only
+-- used by checkName's "too long" warning.
+local function nameAnchor(side)
+  if side == "left" then return BAR_L + NAME_MARGIN + NAME1_NUDGE end
+  return BAR_R - NAME_MARGIN + NAME2_NUDGE
+end
+
+local function nameCentre(str, side)   -- estimated visual centre, for checkName
   local w = nameWidth(str)
-  if side == "left" then return BAR_L + NAME_MARGIN + w / 2 + NAME1_NUDGE end
-  return BAR_R - NAME_MARGIN - w / 2 + NAME2_NUDGE
+  if side == "left" then return nameAnchor(side) + w / 2 end
+  return nameAnchor(side) - w / 2
 end
 
 -- Gotham is proportional, so a per-character average is an approximation —
@@ -371,10 +401,22 @@ end
 checkName(TEAM1_NAME, "left")
 checkName(TEAM2_NAME, "right")
 
-place(text("Team1Name", TEAM1_NAME, NAME_SIZE, WHITE, 1.0,
-           nameCentre(TEAM1_NAME, "left"),  0.115, COL + 7, ROW + 2))
-place(text("Team2Name", TEAM2_NAME, NAME_SIZE, WHITE, 1.0,
-           nameCentre(TEAM2_NAME, "right"), 0.115, COL + 8, ROW + 2))
+local name1 = text("Team1Name", TEAM1_NAME, NAME_SIZE, WHITE, 1.0,
+                   nameAnchor("left"),  0.115, COL + 7, ROW + 2)
+if name1 then
+  setv(name1, "HorizontalLeftCenterRight", -1)   -- anchor on left edge
+  setv(name1, "Font", NAME_FONT)
+  setv(name1, "Style", NAME_FONT_STYLE)
+end
+place(name1)
+local name2 = text("Team2Name", TEAM2_NAME, NAME_SIZE, WHITE, 1.0,
+                   nameAnchor("right"), 0.115, COL + 8, ROW + 2)
+if name2 then
+  setv(name2, "HorizontalLeftCenterRight", 1)    -- anchor on right edge
+  setv(name2, "Font", NAME_FONT)
+  setv(name2, "Style", NAME_FONT_STYLE)
+end
+place(name2)
 
 -- SETS caption sits at 0.139 with the count at 0.101. The walkthrough's
 -- 0.132 / 0.106 left only a hairline of air between the caption and the
@@ -516,7 +558,7 @@ comp:Unlock()
 --------------------------------------------------------------------------------
 
 print("=====================================================")
-print(" Scoreboard built.")
+print(" Volleyball scoreboard built.")
 print(string.format(" %d merges, chained left to right.", mergeCount))
 print(string.format(" Teams: %s  vs  %s", TEAM1_NAME, TEAM2_NAME))
 print("")

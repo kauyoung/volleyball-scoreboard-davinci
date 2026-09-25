@@ -64,6 +64,17 @@ local COMP_START_FRAME = 0
 -- first; this is a second-chance nudge if the overlay drifts from the play.
 local EXTRA_OFFSET_SEC = 0.0
 
+-- AUTO SET ALIGNMENT (added 2026-09-25)
+-- Each set break is a camera stop, so each set after the first starts at a
+-- clip join on V1. If Stop Recording / Resume Recording was tapped early or
+-- late, every score in that set is off by the same amount. With this on, each
+-- set's scores are shifted as a block so its 0-0 lands exactly on its clip
+-- join. Only applied when the number of joins matches the number of set breaks
+-- (i.e. the camera was only stopped between sets) and no shift is bigger than
+-- ALIGN_MAX_SEC. The match file itself is never modified.
+local AUTO_ALIGN_SETS = true
+local ALIGN_MAX_SEC   = 20
+
 local CLEAR_FIRST = true   -- remove existing keyframes before writing new ones
 
 -- Frames per second. Leave at 0 — the script reads the real rate from the
@@ -292,6 +303,71 @@ print(string.format("Loaded %d events: %s vs %s", #match.events,
 print(string.format("Frame rate: %g fps (from %s)", fps, fpsSource))
 
 --------------------------------------------------------------------------------
+-- AUTO SET ALIGNMENT — see AUTO_ALIGN_SETS in CONFIG
+--------------------------------------------------------------------------------
+
+local alignNotes = {}
+local function alignSetsToClipJoins()
+  -- Clip joins on V1, in seconds from the first clip.
+  local r = rawget(_G, "resolve")
+  if not r and Resolve then pcall(function() r = Resolve() end) end
+  if not r and bmd then pcall(function() r = bmd.scriptapp("Resolve") end) end
+  local proj = r and r:GetProjectManager():GetCurrentProject()
+  local tl = proj and proj:GetCurrentTimeline()
+  if not tl then alignNotes[#alignNotes + 1] = "skipped — couldn't read the timeline" return end
+  local items = tl:GetItemListInTrack("video", 1) or {}
+  local starts = {}
+  for _, it in ipairs(items) do starts[#starts + 1] = it:GetStart() end
+  table.sort(starts)
+  if #starts < 2 then alignNotes[#alignNotes + 1] = "skipped — only one clip, no set breaks to align" return end
+  local tlFps = tonumber(tl:GetSetting("timelineFrameRate")) or fps
+  local joins = {}
+  for i = 2, #starts do joins[#joins + 1] = (starts[i] - starts[1]) / tlFps end
+
+  -- Where each set after the first begins in the data (its 0-0 event).
+  local setStart, order = {}, {}
+  for _, e in ipairs(match.events) do
+    if e.set and e.set > 1 and not setStart[e.set] then
+      setStart[e.set] = e.t
+      order[#order + 1] = e.set
+    end
+  end
+  if #order == 0 then alignNotes[#alignNotes + 1] = "skipped — the match data has only one set" return end
+  if #order ~= #joins then
+    alignNotes[#alignNotes + 1] = string.format(
+      "skipped — %d set break(s) in the data but %d clip join(s) in the footage. "
+      .. "The camera was probably stopped mid-set; align by hand if needed.", #order, #joins)
+    fail(alignNotes[#alignNotes])
+    return
+  end
+
+  local shift = {}
+  for i, s in ipairs(order) do
+    local d = joins[i] - (setStart[s] + baseOffset)
+    if math.abs(d) > ALIGN_MAX_SEC then
+      alignNotes[#alignNotes + 1] = string.format(
+        "skipped — set %d would move %.1f s, more than ALIGN_MAX_SEC (%d s). Check the data.", s, d, ALIGN_MAX_SEC)
+      fail(alignNotes[#alignNotes])
+      return
+    end
+    shift[s] = d
+  end
+  for _, e in ipairs(match.events) do
+    if shift[e.set] then e.t = e.t + shift[e.set] end
+  end
+  for _, s in ipairs(order) do
+    alignNotes[#alignNotes + 1] = string.format("set %d moved %s%.2f s to start on its clip join",
+      s, shift[s] >= 0 and "+" or "", shift[s])
+  end
+end
+
+if AUTO_ALIGN_SETS then
+  local ok, err = pcall(alignSetsToClipJoins)
+  if not ok then alignNotes[#alignNotes + 1] = "skipped — " .. tostring(err) end
+  for _, n in ipairs(alignNotes) do print("Set alignment: " .. n) end
+end
+
+--------------------------------------------------------------------------------
 -- KEYFRAME HELPERS
 --------------------------------------------------------------------------------
 
@@ -427,16 +503,23 @@ counts["Team2Serve"] = animate(tool("Team2ServeMerge"), "Blend", srv2, "Team2Ser
 -- ended up hanging off the end of the bar.
 --------------------------------------------------------------------------------
 
-local NAME_CHAR_W  = 0.0138   -- Gotham Medium at 0.026, average character width
+local NAME_CHAR_W  = 0.0115   -- Gotham Narrow Bold at 0.026, measured on a 4K render (Gotham Medium was 0.0138)
 local NAME_MARGIN  = 0.020    -- gap from the end of the bar to the text
-local BAR_L, BAR_R = 0.125, 0.875
-local NAME1_NUDGE  = 0.0
-local NAME2_NUDGE  = -0.003
+-- Keep BAR_WIDTH in step with build-scoreboard.lua (0.75 until 2026-09-25).
+local BAR_WIDTH    = 0.85
+local BAR_L, BAR_R = 0.5 - BAR_WIDTH / 2, 0.5 + BAR_WIDTH / 2
+-- Keep these in step with build-scoreboard.lua. Names are edge-anchored now
+-- (2026-09-25), so these only correct the font's side bearings: 40px from
+-- each accent line on a 4K render.
+local NAME1_NUDGE  = 0.0030
+local NAME2_NUDGE  = -0.0015
 
 -- Widest a name may be before it reaches the serve ball. The ball sits at
 -- 0.3631 / 0.6369 and is ~0.0093 wide either side of that; this leaves a small
 -- gap beyond it. Symmetric, so one number covers both sides.
-local NAME_MAX_W = 0.196
+-- The inner limit (~0.341) is fixed by the serve ball; the outer start moves
+-- with the bar, so the room grows as the bar widens.
+local NAME_MAX_W = 0.341 - (BAR_L + NAME_MARGIN)
 local ELLIPSIS   = "..."
 
 local CHAR_W = {
@@ -465,10 +548,12 @@ local function fitName(str)
   return ELLIPSIS, true
 end
 
-local function nameCentre(str, side)
-  local w = nameWidth(str)
-  if side == "left" then return BAR_L + NAME_MARGIN + w / 2 + NAME1_NUDGE end
-  return BAR_R - NAME_MARGIN - w / 2 + NAME2_NUDGE
+-- Outer-edge anchor point. The Text+ node is anchored left (Team1) or right
+-- (Team2), so the gap to the end of the bar is exact for any name length —
+-- no width estimate involved. (nameWidth is still used by fitName above.)
+local function nameAnchor(side)
+  if side == "left" then return BAR_L + NAME_MARGIN + NAME1_NUDGE end
+  return BAR_R - NAME_MARGIN + NAME2_NUDGE
 end
 
 local function setName(nodeName, raw, side)
@@ -478,7 +563,8 @@ local function setName(nodeName, raw, side)
 
   local shown, wasCut = fitName(raw)
   pcall(function() node.StyledText[0] = shown end)
-  pcall(function() node.Center[0] = { nameCentre(shown, side), 0.115 } end)
+  pcall(function() node.HorizontalLeftCenterRight[0] = (side == "left") and -1 or 1 end)
+  pcall(function() node.Center[0] = { nameAnchor(side), 0.115 } end)
 
   if wasCut then
     fail(string.format("%q was too wide for the bar — showing %q", raw, shown))
@@ -506,6 +592,9 @@ say(" Match applied " .. os.date("%Y-%m-%d %H:%M:%S"))
 say(" From: " .. MATCH_FILE)
 say(string.format(" Teams: %s vs %s", tostring(match.team1), tostring(match.team2)))
 say(string.format(" Frame rate used: %g fps (from %s)", fps, fpsSource))
+if AUTO_ALIGN_SETS then
+  for _, n in ipairs(alignNotes) do say(" Set alignment: " .. n) end
+end
 say("")
 for _, k in ipairs({"Team1Score", "Team2Score", "Team1Sets", "Team2Sets",
                     "SetNumber", "Team1Serve", "Team2Serve"}) do
