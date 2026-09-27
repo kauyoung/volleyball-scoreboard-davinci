@@ -3,41 +3,38 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#F2F2F7">
 <title>Scorekeeper</title>
 <style>
   :root {
-    /* System colors */
-    --accent: #0A84FF;
-    --accent-dim: rgba(10,132,255,0.10);
-    --accent-text: #0055B3;
+    /* 2026-09-27: one blue everywhere — the overlay's sky blue #6BBDFF.
+       It's light, so anything ON it uses dark navy text (--on-blue), and
+       small blue text on white uses a deeper shade of the same hue. */
+    --accent: #6BBDFF;
+    --accent-dim: rgba(107,189,255,0.20);
+    --accent-text: #1B6FB5;
+    --on-blue: #0B2540;
     --green: #34C759;
+    --green-dark: #248A3D;
     --green-dim: rgba(52,199,89,0.12);
     --green-text: #177A33;
+    --team1: #3FA33A;          /* our team: green, a touch darker than the overlay's so white text reads */
+    --opp: #6BBDFF;            /* opponent sky blue — same as the video overlay */
+    --amber: #FF9F0A;
     --amber-dim: rgba(255,159,10,0.14);
     --amber-text: #8A5200;
     --red: #FF3B30;
-
-    /* Surfaces */
     --bg: #F2F2F7;
     --surface: #FFFFFF;
     --fill: #F2F2F7;
     --separator: rgba(60,60,67,0.10);
-
-    /* Label hierarchy */
     --label: #000000;
     --label-2: #3C3C43;
     --label-3: rgba(60,60,67,0.60);
     --label-4: rgba(60,60,67,0.35);
-
-    /* Radii */
-    --r-lg: 22px;
-    --r-md: 16px;
-    --r-sm: 12px;
-
-    /* 8pt spacing rhythm */
-    --s1: 8px;  --s2: 16px; --s3: 24px; --s4: 32px; --s5: 40px;
+    --r-lg: 22px; --r-md: 16px; --r-sm: 12px;
+    --s1: 8px; --s2: 16px; --s3: 24px; --s4: 32px; --s5: 40px;
   }
-
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
   body {
@@ -46,37 +43,13 @@
     background: var(--bg);
     color: var(--label);
     min-height: 100vh;
-    padding: var(--s4) var(--s2) var(--s5);
+    padding: var(--s3) var(--s2) calc(var(--s5) + 60px);
   }
-  .wrap { max-width: 440px; margin: 0 auto; }
+  .wrap { max-width: 460px; margin: 0 auto; }
+  [hidden] { display: none !important; }
 
-  /* ---------- Header ---------- */
-  header { text-align: center; margin-bottom: var(--s4); }
-  header h1 {
-    font-size: 28px;
-    font-weight: 700;
-    letter-spacing: -0.026em;
-    line-height: 1.14;
-    margin: 0 0 6px;
-  }
-  header p {
-    font-size: 15px;
-    line-height: 1.33;
-    color: var(--label-3);
-    margin: 0;
-    font-weight: 400;
-    letter-spacing: -0.01em;
-  }
-
-  /* ---------- Grouped list section ---------- */
-  .section-header {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--label-3);
-    letter-spacing: 0.01em;
-    text-transform: uppercase;
-    margin: var(--s4) 4px var(--s1);
-  }
+  header { text-align: center; margin-bottom: var(--s3); }
+  header h1 { font-size: 24px; font-weight: 700; letter-spacing: -0.024em; margin: 0; }
 
   .card {
     background: var(--surface);
@@ -85,496 +58,387 @@
     box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 12px 32px rgba(0,0,0,0.04);
   }
   .card + .card { margin-top: var(--s2); }
+  .section-header {
+    font-size: 13px; font-weight: 600; color: var(--label-3);
+    letter-spacing: 0.01em; text-transform: uppercase;
+    margin: var(--s3) 4px var(--s1);
+  }
 
-  /* ---------- Form fields ---------- */
+  /* Big friendly step headings */
+  .step-title { font-size: 26px; font-weight: 700; letter-spacing: -0.024em; line-height: 1.2; margin: 0 0 var(--s1); }
+  .step-sub   { font-size: 17px; line-height: 1.45; color: var(--label-2); margin: 0 0 var(--s3); }
+  .steps { list-style: none; padding: 0; margin: 0 0 var(--s3); }
+  .steps li {
+    display: flex; gap: 14px; align-items: flex-start;
+    font-size: 18px; line-height: 1.4; font-weight: 500;
+    padding: 12px 0; border-bottom: 0.5px solid var(--separator);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps .num {
+    flex: 0 0 34px; height: 34px; border-radius: 50%;
+    background: var(--label); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 17px;
+  }
+
+  /* Form */
   .field + .field { margin-top: var(--s3); }
   .field label {
-    display: block;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--label-3);
-    letter-spacing: 0.01em;
-    text-transform: uppercase;
-    margin-bottom: var(--s1);
+    display: block; font-size: 13px; font-weight: 600; color: var(--label-3);
+    letter-spacing: 0.01em; text-transform: uppercase; margin-bottom: var(--s1);
   }
   .field input {
-    width: 100%;
-    min-height: 48px;
-    background: var(--fill);
-    border: 1.5px solid transparent;
-    border-radius: var(--r-sm);
-    padding: 12px 16px;
-    color: var(--label);
-    font-size: 17px;
-    font-weight: 500;
-    font-family: inherit;
-    letter-spacing: -0.02em;
-    transition: border-color 180ms cubic-bezier(0.4,0,0.2,1), background 180ms ease;
+    width: 100%; min-height: 54px;
+    background: var(--fill); border: 1.5px solid transparent; border-radius: var(--r-sm);
+    padding: 12px 16px; color: var(--label);
+    font-size: 19px; font-weight: 500; font-family: inherit; letter-spacing: -0.02em;
   }
   .field input::placeholder { color: var(--label-4); font-weight: 400; }
   .field input:focus { outline: none; border-color: var(--accent); background: var(--surface); }
-  .field input:disabled { opacity: 0.45; }
-  .field-note {
-    font-size: 13px;
-    line-height: 1.46;
-    color: var(--label-3);
-    margin-top: var(--s1);
-    letter-spacing: -0.005em;
-  }
+  .field-note { font-size: 14px; line-height: 1.45; color: var(--label-3); margin-top: var(--s1); }
+  .field-note.warn { color: var(--amber-text); font-weight: 600; }
 
-  /* ---------- Timer ---------- */
-  .timer-row { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--s2); }
-  .timer-value {
-    font-size: 40px;
-    font-weight: 700;
-    font-variant-numeric: tabular-nums;
-    letter-spacing: -0.03em;
-    line-height: 1.05;
-    margin-bottom: 10px;
-  }
-  .pill {
-    display: inline-flex;
-    align-items: center;
-    font-size: 13px;
-    font-weight: 600;
-    letter-spacing: 0.01em;
-    color: var(--label-3);
-    background: var(--fill);
-    padding: 6px 12px;
-    border-radius: 100px;
-  }
-  .pill.live { color: var(--green-text); background: var(--green-dim); }
-  /* Spaced with a margin rather than flex `gap`. Older mobile Safari ignores
-     gap in flexbox, which silently collapses it to zero and lands the dot on
-     top of the first letter. A margin behaves the same everywhere.
-     min-width guards against the dot being squashed if space ever gets tight. */
-  .pill .dot {
-    width: 7px;
-    height: 7px;
-    min-width: 7px;
-    border-radius: 50%;
-    background: currentColor;
-    flex-shrink: 0;
-    margin-right: 7px;
-  }
-  .pill.live .dot { animation: pulse 1.8s ease-in-out infinite; }
-  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
-  .timer-meta {
-    font-size: 15px;
-    color: var(--label-3);
-    text-align: right;
-    letter-spacing: -0.01em;
-    padding-top: 6px;
-  }
-
-  /* ---------- Buttons ---------- */
+  /* Buttons */
   button { font-family: inherit; -webkit-appearance: none; appearance: none; border: none; cursor: pointer; }
   button:active:not(:disabled) { transform: scale(0.975); }
-  button:disabled { cursor: not-allowed; }
-
+  button:disabled { cursor: not-allowed; opacity: 0.45; }
   .btn {
-    width: 100%;
-    min-height: 54px;
-    border-radius: var(--r-md);
-    font-size: 17px;
-    font-weight: 600;
-    letter-spacing: -0.02em;
-    transition: transform 120ms cubic-bezier(0.4,0,0.2,1), opacity 180ms ease;
+    width: 100%; min-height: 60px; border-radius: var(--r-md);
+    font-size: 19px; font-weight: 700; letter-spacing: -0.02em;
+    transition: transform 120ms cubic-bezier(0.4,0,0.2,1), opacity 180ms ease, background 180ms ease;
   }
-  .btn-filled { background: var(--accent); color: #fff; }
-  .btn-filled.destructive { background: var(--red); }
-  .btn-filled.success { background: var(--green); }
-  .btn-filled:disabled { background: var(--label-4); opacity: 0.5; }
-  .btn-tinted {
-    background: var(--surface);
-    color: var(--label);
-    box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 12px 32px rgba(0,0,0,0.04);
+  .btn-big { min-height: 76px; font-size: 22px; }
+  .btn-go   { background: var(--green); color: #fff; }
+  .btn-blue { background: var(--accent); color: var(--on-blue); }
+  .btn-dark { background: var(--label); color: #fff; }
+  .btn-plain {
+    background: var(--surface); color: var(--label);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 8px 24px rgba(0,0,0,0.05);
+    font-weight: 600; font-size: 17px; min-height: 54px;
   }
-  .btn-tinted.destructive { color: var(--red); }
-  /* Armed state for the two-tap Camera Stopped confirm — deliberately loud, so
-     a stray first tap is obvious rather than sitting silently primed. */
-  .btn.armed {
-    background: var(--amber-dim);
-    color: var(--amber-text);
-    box-shadow: inset 0 0 0 2px currentColor;
+  .btn-plain.danger { color: var(--red); }
+  .btn.armed { background: var(--amber-dim); color: var(--amber-text); box-shadow: inset 0 0 0 2px currentColor; }
+  .btn-link {
+    background: none; color: var(--accent-text); font-size: 16px; font-weight: 600;
+    padding: 12px; width: 100%;
   }
-  /* While the camera is stopped, Resume Recording is the one thing you must not
-     forget: +1 is ignored until it's tapped, and every second it's tapped late
-     pushes the rest of the match's scores later than the video. So it goes solid
-     green with a slow pulse — impossible to mistake for the pale Stop button. */
-  .btn.resume {
-    background: var(--green);
-    color: #fff;
-    animation: resumePulse 1.6s ease-in-out infinite;
-  }
-  @keyframes resumePulse {
+  .pulse { animation: goPulse 1.6s ease-in-out infinite; }
+  @keyframes goPulse {
     0%, 100% { box-shadow: 0 0 0 0 rgba(52,199,89,0.55); }
-    50%      { box-shadow: 0 0 0 10px rgba(52,199,89,0); }
+    50%      { box-shadow: 0 0 0 12px rgba(52,199,89,0); }
   }
-  @media (prefers-reduced-motion: reduce) { .btn.resume { animation: none; } }
+  @media (prefers-reduced-motion: reduce) { .pulse { animation: none; } }
+  .stack > * + * { margin-top: 12px; }
 
-  /* Warning shown when +1 is tapped while the camera is stopped. */
-  .toast {
-    position: fixed;
-    left: 50%;
-    bottom: calc(24px + env(safe-area-inset-bottom));
-    transform: translateX(-50%) translateY(20px);
-    width: min(92vw, 440px);
-    padding: 14px 18px;
-    border-radius: 14px;
-    background: var(--amber-dim);
-    color: var(--amber-text);
-    box-shadow: inset 0 0 0 2px currentColor, 0 12px 32px rgba(0,0,0,0.18);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    font-size: 16px;
-    font-weight: 600;
-    letter-spacing: -0.015em;
-    line-height: 1.3;
-    text-align: center;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 180ms ease, transform 180ms ease;
-    z-index: 50;
+  /* Status pill */
+  .topline { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--s2); }
+  .pill {
+    display: inline-flex; align-items: center;
+    font-size: 14px; font-weight: 600; color: var(--label-3);
+    background: var(--surface); padding: 7px 13px; border-radius: 100px;
   }
-  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .pill.live { color: var(--green-text); background: var(--green-dim); }
+  .pill.stopped { color: var(--amber-text); background: var(--amber-dim); }
+  .pill .dot { width: 8px; height: 8px; min-width: 8px; border-radius: 50%; background: currentColor; margin-right: 7px; }
+  .pill.live .dot { animation: blink 1.8s ease-in-out infinite; }
+  @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+  .timer { font-size: 15px; font-weight: 600; color: var(--label-3); font-variant-numeric: tabular-nums; }
 
-  .stack > * + * { margin-top: 10px; }
-  .row { display: flex; gap: 10px; }
-  .row > * { flex: 1; }
+  .set-head { text-align: center; margin-bottom: var(--s2); }
+  .set-head .t { font-size: 24px; font-weight: 800; letter-spacing: -0.02em; }
+  .set-head .s { font-size: 15px; color: var(--label-3); margin-top: 2px; }
 
-  /* ---------- Set header ---------- */
-  .set-header {
-    text-align: center;
-    margin: var(--s4) 0 var(--s2);
-  }
-  .set-header .set-title {
-    font-size: 22px;
-    font-weight: 700;
-    letter-spacing: -0.022em;
-    line-height: 1.18;
-  }
-  .set-header .set-sub {
-    font-size: 15px;
-    font-weight: 400;
-    color: var(--label-3);
-    letter-spacing: -0.01em;
-    margin-top: 4px;
-  }
-
-  /* ---------- Banner ---------- */
+  /* Banner */
   .banner {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--s2);
-    border-radius: var(--r-md);
-    padding: 16px 18px;
-    margin-bottom: var(--s2);
-    font-size: 16px;
-    font-weight: 600;
-    letter-spacing: -0.015em;
-    line-height: 1.3;
+    display: flex; align-items: center; justify-content: space-between; gap: var(--s2);
+    border-radius: var(--r-md); padding: 14px 18px; margin-bottom: var(--s2);
+    font-size: 17px; font-weight: 700; letter-spacing: -0.015em; line-height: 1.3;
   }
   .banner.info { background: var(--accent-dim); color: var(--accent-text); }
   .banner.warn { background: var(--amber-dim); color: var(--amber-text); }
   .banner.done { background: var(--green-dim); color: var(--green-text); }
   .banner button {
-    background: currentColor;
-    border-radius: 10px;
-    min-height: 40px;
-    padding: 0 18px;
-    font-size: 15px;
-    font-weight: 600;
-    letter-spacing: -0.015em;
-    white-space: nowrap;
-    flex-shrink: 0;
+    background: currentColor; border-radius: 10px; min-height: 42px; padding: 0 18px;
+    font-size: 15px; font-weight: 700; white-space: nowrap; flex-shrink: 0;
   }
   .banner button span { color: #fff; }
 
-  /* ---------- Scoreboard ---------- */
-  .scoreboard { display: flex; gap: 12px; }
-  .team-card {
-    flex: 1;
-    min-width: 0;
-    background: var(--surface);
-    border-radius: var(--r-lg);
-    padding: var(--s3) var(--s2) var(--s2);
-    text-align: center;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 12px 32px rgba(0,0,0,0.04);
+  /* The two giant team buttons */
+  .team-btn {
+    width: 100%; display: flex; align-items: center; justify-content: space-between;
+    border-radius: var(--r-lg); padding: 18px 22px; color: #fff; text-align: left;
+    min-height: 150px; position: relative; overflow: hidden;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+    transition: transform 100ms ease, filter 150ms ease;
   }
-  .team-card .team-name {
-    font-size: 15px;
-    font-weight: 600;
-    letter-spacing: -0.015em;
-    color: var(--label-2);
-    line-height: 1.27;
-    margin-bottom: var(--s1);
-    min-height: 20px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+  .team-btn + .team-btn { margin-top: 14px; }
+  .team-btn.t1 { background: var(--team1); }
+  .team-btn.t2 { background: var(--opp); color: var(--on-blue); }
+  .team-btn.t2 .sets { background: rgba(255,255,255,0.40); }
+  .team-btn .who { min-width: 0; }
+  .team-btn .name { font-size: 22px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.15;
+                    overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  .team-btn .hint { font-size: 15px; font-weight: 600; opacity: 0.85; margin-top: 6px; }
+  .team-btn .sets { font-size: 14px; font-weight: 700; opacity: 0.9; margin-top: 8px;
+                    background: rgba(255,255,255,0.22); display: inline-block; padding: 4px 10px; border-radius: 100px; }
+  .team-btn .score { font-size: 84px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -0.04em; line-height: 1; margin-left: 12px; }
+  .team-btn.flash::after {
+    content: ""; position: absolute; inset: 0; background: rgba(255,255,255,0.55);
+    animation: flash 380ms ease-out forwards;
   }
-  .team-card .team-score {
-    font-size: 64px;
-    font-weight: 700;
-    font-variant-numeric: tabular-nums;
-    letter-spacing: -0.04em;
-    line-height: 1;
-    margin: 4px 0 12px;
-  }
-  .sets-won {
-    display: inline-flex;
-    align-items: baseline;
-    gap: 6px;
-    background: var(--fill);
-    border-radius: 100px;
-    padding: 7px 14px;
-    margin-bottom: var(--s3);
-  }
-  .sets-won .sets-label {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--label-3);
-    letter-spacing: 0.01em;
-  }
-  .sets-won .sets-value {
-    font-size: 17px;
-    font-weight: 700;
-    color: var(--label);
-    font-variant-numeric: tabular-nums;
-    letter-spacing: -0.02em;
-  }
+  @keyframes flash { from { opacity: 1; } to { opacity: 0; } }
+  .score.pop { animation: pop 320ms ease-out; }
+  @keyframes pop { 0% { transform: scale(1); } 40% { transform: scale(1.25); } 100% { transform: scale(1); } }
+  .team-btn:disabled { filter: grayscale(0.7); opacity: 0.55; }
 
-  .tap-row { display: flex; gap: var(--s1); }
-  .tap-plus {
-    flex: 1;
-    min-height: 52px;
-    background: var(--label);
-    color: #fff;
-    border-radius: var(--r-sm);
-    font-size: 17px;
-    font-weight: 600;
-    letter-spacing: -0.02em;
+  /* Undo snackbar */
+  .snack {
+    position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom));
+    transform: translateX(-50%) translateY(30px);
+    width: min(94vw, 460px);
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    background: #1C1C1E; color: #fff; border-radius: 16px; padding: 12px 12px 12px 18px;
+    font-size: 16px; font-weight: 600; box-shadow: 0 12px 32px rgba(0,0,0,0.3);
+    opacity: 0; pointer-events: none; transition: opacity 180ms ease, transform 180ms ease; z-index: 60;
   }
-  .tap-minus {
-    flex: 0 0 52px;
-    min-height: 52px;
-    background: var(--fill);
-    color: var(--label-3);
-    border-radius: var(--r-sm);
-    font-size: 22px;
-    font-weight: 500;
-  }
+  .snack.show { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; }
+  .snack button { background: #FFD60A; color: #000; font-weight: 800; font-size: 16px; border-radius: 12px; min-height: 48px; padding: 0 20px; flex-shrink: 0; }
 
-  /* ---------- Lists ---------- */
-  .list-card { padding: 4px var(--s3); }
+  /* Message toast */
+  .toast {
+    position: fixed; left: 50%; top: calc(16px + env(safe-area-inset-top));
+    transform: translateX(-50%) translateY(-20px);
+    width: min(92vw, 440px); padding: 14px 18px; border-radius: 14px;
+    background: #FFF4E0; color: var(--amber-text); box-shadow: inset 0 0 0 2px currentColor, 0 12px 32px rgba(0,0,0,0.18);
+    font-size: 16px; font-weight: 700; line-height: 1.3; text-align: center;
+    opacity: 0; pointer-events: none; transition: opacity 180ms ease, transform 180ms ease; z-index: 70;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* Result / summary rows */
+  .result-big { text-align: center; font-size: 30px; font-weight: 800; letter-spacing: -0.02em; margin: var(--s1) 0; }
   .list-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: var(--s2);
-    padding: 16px 0;
-    border-bottom: 0.5px solid var(--separator);
-    font-size: 16px;
-    letter-spacing: -0.015em;
+    display: flex; justify-content: space-between; align-items: center; gap: var(--s2);
+    padding: 14px 0; border-bottom: 0.5px solid var(--separator); font-size: 16px;
   }
   .list-row:last-child { border-bottom: none; }
-  .list-row .lead { display: flex; align-items: center; gap: 10px; min-width: 0; }
-  .list-row .set-no {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--label-3);
-    letter-spacing: 0.01em;
-    flex-shrink: 0;
-  }
-  .list-row .winner { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .list-row .final { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--label-3); flex-shrink: 0; }
-  .badge {
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.02em;
-    padding: 3px 9px;
-    border-radius: 100px;
-    background: var(--green-dim);
-    color: var(--green-text);
-    flex-shrink: 0;
-  }
-  .badge.tie { background: var(--fill); color: var(--label-3); }
+  .list-row .l { color: var(--label-3); font-weight: 600; }
+  .list-row .r { font-weight: 700; font-variant-numeric: tabular-nums; }
+  .log { max-height: 220px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .empty-state { text-align: center; padding: var(--s2) 0; color: var(--label-4); font-size: 15px; }
 
-  .log { max-height: 208px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
-  .log .list-row .t { font-size: 15px; color: var(--label-3); font-variant-numeric: tabular-nums; }
-  .log .list-row .s { font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums; }
-  .empty-state {
-    text-align: center;
-    padding: var(--s3) 0;
-    color: var(--label-4);
-    font-size: 15px;
-    letter-spacing: -0.01em;
+  /* "More" drawer */
+  details.more { margin-top: var(--s4); }
+  details.more > summary {
+    list-style: none; cursor: pointer; text-align: center;
+    font-size: 16px; font-weight: 600; color: var(--label-3);
+    padding: 14px; border-radius: var(--r-md); background: rgba(118,118,128,0.10);
   }
-
-  .footnote {
-    font-size: 13px;
-    line-height: 1.54;
-    color: var(--label-3);
-    text-align: center;
-    margin-top: var(--s2);
-    padding: 0 var(--s2);
-    letter-spacing: -0.005em;
-  }
-  .footnote b { color: var(--label-2); font-weight: 600; }
+  details.more > summary::-webkit-details-marker { display: none; }
+  details.more[open] > summary { margin-bottom: var(--s2); }
+  .more-note { font-size: 13px; line-height: 1.45; color: var(--label-3); margin: 6px 4px 0; }
+  .footnote { font-size: 13px; line-height: 1.5; color: var(--label-3); text-align: center; margin-top: var(--s2); }
 </style>
 </head>
 <body>
 <div class="wrap">
 
-  <header>
-    <h1>Scorekeeper</h1>
-    <p>Live match tracking, exported for DaVinci Resolve</p>
-  </header>
+  <header><h1>🏐 Volleyball Scorekeeper</h1></header>
 
-  <div class="section-header">Teams</div>
-  <div class="card" id="setupPanel">
-    <div class="field">
-      <label>Your team</label>
-      <input type="text" id="team1Name" value="Home Team" maxlength="24">
-    </div>
-    <div class="field">
-      <label>Opponent</label>
-      <input type="text" id="team2Name" value="" placeholder="Enter opponent name" maxlength="24">
-    </div>
-  </div>
-
-  <div class="section-header">Match timer</div>
-  <div class="card">
-    <div class="timer-row">
-      <div>
-        <div class="timer-value" id="timeDisplay">00:00:00</div>
-        <div class="pill" id="statusPill"><span class="dot"></span><span id="statusText">Not started</span></div>
-      </div>
-      <div class="timer-meta" id="pointCount">0 points</div>
-    </div>
-  </div>
-
-  <div class="stack" style="margin-top: var(--s2);">
-    <button class="btn btn-filled" id="startBtn">Start — press when you hit record</button>
-    <button class="btn btn-filled destructive" id="stopBtn" style="display:none;">End Match</button>
-  </div>
-  <!-- Normal endings are handled by the banner, which offers "End Match" the
-       moment a team takes their second set. This button is the escape hatch for
-       matches that never reach a winning score, and it's also what unlocks
-       Export — so it needs to be findable without explanation. -->
-  <div class="footnote" id="endMatchNote" style="display:none; margin-top: 10px;">
-    When a team wins their second set, the banner above offers <b>End Match</b> —
-    use that. This button is for matches that stop early: a forfeit, a time cap,
-    or a team short on players. Either way, the match has to be ended before you
-    can export.
-  </div>
-
-  <div class="set-header">
-    <div class="set-title">Set <span id="currentSetNum">1</span></div>
-    <div class="set-sub" id="setTargetLabel">First to 25</div>
-  </div>
-
-  <div id="statusBanner" style="display:none;"></div>
-
-  <div class="scoreboard">
-    <div class="team-card">
-      <div class="team-name" id="t1DisplayName">Home Team</div>
-      <div class="team-score" id="t1Score">0</div>
-      <div class="sets-won"><span class="sets-label">Sets</span><span class="sets-value" id="t1Sets">0</span></div>
-      <div class="tap-row">
-        <button class="tap-minus" id="t1Minus">−</button>
-        <button class="tap-plus" id="t1Plus">+1</button>
+  <!-- ============ RESTORE: a match was in progress when the page closed ============ -->
+  <section id="stRestore" hidden>
+    <div class="card">
+      <h2 class="step-title">Continue your match?</h2>
+      <p class="step-sub" id="restoreInfo"></p>
+      <div class="stack">
+        <button class="btn btn-big btn-go" id="restoreYes">Continue this match</button>
+        <button class="btn btn-plain danger" id="restoreNo">Throw it away and start a new match</button>
       </div>
     </div>
-    <div class="team-card">
-      <div class="team-name" id="t2DisplayName">Opponent</div>
-      <div class="team-score" id="t2Score">0</div>
-      <div class="sets-won"><span class="sets-label">Sets</span><span class="sets-value" id="t2Sets">0</span></div>
-      <div class="tap-row">
-        <button class="tap-minus" id="t2Minus">−</button>
-        <button class="tap-plus" id="t2Plus">+1</button>
+  </section>
+
+  <!-- ============ STEP 1: team names ============ -->
+  <section id="stSetup" hidden>
+    <div class="card">
+      <h2 class="step-title">Who's playing?</h2>
+      <div class="field">
+        <label for="team1Name">Our team</label>
+        <input type="text" id="team1Name" value="Home Team" maxlength="30" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="team2Name">Opponent</label>
+        <input type="text" id="team2Name" value="" placeholder="Type the other team's name" maxlength="30" autocomplete="off" autocapitalize="words">
+        <div class="field-note" id="nameNote">This shows on the scoreboard in the video.</div>
       </div>
     </div>
-  </div>
-
-  <!-- Undo Last stays up here with the scoreboard: it's an in-play correction,
-       used in the same breath as a mis-tapped +1, and it's harmless. -->
-  <div class="stack" style="margin-top: var(--s2);">
-    <button class="btn btn-tinted destructive" id="undoBtn">Undo Last</button>
-  </div>
-
-  <!-- The set-break controls live in their own section, in the order they're
-       tapped. The section header puts real space between Camera Stopped and the
-       +1 buttons — an accidental pause silently corrupts every timestamp after
-       it, so distance and the two-tap confirm are both worth having. -->
-  <div class="section-header">Between sets</div>
-  <div class="card">
-    <!-- Instructions sit ABOVE the buttons on purpose: they read in the order
-         you act, and the block of text puts another inch between Camera Stopped
-         and the +1 buttons above it. -->
-    <div class="field-note" style="margin-top: 0; margin-bottom: 16px;">
-      When you stop the camera, tap <b>Stop Recording</b> (twice — it confirms),
-      then <b>End Set</b>. When you start the camera again, tap
-      <b>Resume Recording</b>. Time between the two is left out, so timestamps
-      stay matched to the video.
+    <div class="stack" style="margin-top: var(--s3);">
+      <button class="btn btn-big btn-dark" id="setupNext" disabled>Next</button>
     </div>
-    <div class="stack">
-      <button class="btn btn-tinted" id="pauseBtn">Stop Recording</button>
-      <button class="btn btn-tinted" id="newSetBtn">End Set</button>
+  </section>
+
+  <!-- ============ STEP 2: start recording ============ -->
+  <section id="stReady" hidden>
+    <div class="card">
+      <h2 class="step-title">Ready to start</h2>
+      <p class="step-sub" id="readyTeams"></p>
+      <ol class="steps">
+        <li><span class="num">1</span><span>Press <b>RECORD</b> on the camera.</span></li>
+        <li><span class="num">2</span><span>At the same moment, tap the green <b>START</b> button below.</span></li>
+      </ol>
     </div>
-  </div>
-
-  <div class="section-header" id="setHistoryTitle" style="display:none;">Completed sets</div>
-  <div class="card list-card" id="setHistoryPanel" style="display:none;"></div>
-
-  <div class="section-header">Point log</div>
-  <div class="card list-card log" id="logPanel">
-    <div class="empty-state">Points appear here as you log them</div>
-  </div>
-
-  <div class="section-header">Sync offset</div>
-  <div class="card">
-    <div class="field">
-      <label>Seconds to shift</label>
-      <input type="number" id="offsetInput" value="0" step="0.1">
-      <div class="field-note">If the camera started before or after you tapped Start, enter the gap here. Every timestamp shifts to match.</div>
+    <div class="stack" style="margin-top: var(--s3);">
+      <button class="btn btn-big btn-go pulse" id="startBtn">START</button>
+      <button class="btn-link" id="readyBack">← Change team names</button>
     </div>
-  </div>
+  </section>
 
-  <div class="stack" style="margin-top: var(--s3);">
-    <button class="btn btn-filled success" id="exportBtn" disabled>Export match data for DaVinci Resolve</button>
-    <button class="btn btn-tinted" id="newMatchBtn" style="display:none;">Start New Match</button>
-  </div>
+  <!-- ============ STEP 3: scoring ============ -->
+  <section id="stPlay" hidden>
+    <div class="topline">
+      <span class="pill live" id="statusPill"><span class="dot"></span><span id="statusText">Recording</span></span>
+      <span class="timer" id="timeDisplay">00:00:00</span>
+    </div>
+    <div class="set-head">
+      <div class="t">Set <span id="currentSetNum">1</span></div>
+      <div class="s" id="setTargetLabel">First to 25</div>
+    </div>
+    <div id="statusBanner" hidden></div>
 
-  <div class="footnote">
-    On a phone this opens the share sheet — choose <b>Save to Drive</b>. On a computer it downloads directly.
-  </div>
+    <button class="team-btn t1" id="t1Plus">
+      <span class="who">
+        <span class="name" id="t1DisplayName">Our Team</span>
+        <span class="hint">Tap when they win the point</span>
+        <span class="sets">Sets won: <span id="t1Sets">0</span></span>
+      </span>
+      <span class="score" id="t1Score">0</span>
+    </button>
+    <button class="team-btn t2" id="t2Plus">
+      <span class="who">
+        <span class="name" id="t2DisplayName">Opponent</span>
+        <span class="hint">Tap when they win the point</span>
+        <span class="sets">Sets won: <span id="t2Sets">0</span></span>
+      </span>
+      <span class="score" id="t2Score">0</span>
+    </button>
+
+    <details class="more" id="playMore">
+      <summary>More options</summary>
+      <div class="stack">
+        <button class="btn btn-plain" id="undoBtn">Undo last point</button>
+        <button class="btn btn-plain" id="t1Minus">Remove a point from <span class="n1">Our Team</span></button>
+        <button class="btn btn-plain" id="t2Minus">Remove a point from <span class="n2">Opponent</span></button>
+        <p class="more-note">"Remove a point" takes away that team's most recent point in this set, even if other points came after it.</p>
+        <button class="btn btn-plain" id="pauseBtn">Camera stopped mid-set (timeout, battery…)</button>
+        <button class="btn btn-plain danger" id="stopBtn">End match early (forfeit / out of time)</button>
+      </div>
+      <div class="section-header">Sync offset</div>
+      <div class="card">
+        <div class="field">
+          <label for="offsetInput">Seconds to shift</label>
+          <input type="number" id="offsetInput" value="0" step="0.1">
+          <div class="field-note">Only if the camera started noticeably before or after START was tapped. Usually leave at 0.</div>
+        </div>
+      </div>
+      <div class="section-header" id="setHistoryTitle" hidden>Completed sets</div>
+      <div class="card" id="setHistoryPanel" hidden></div>
+      <div class="section-header">Point log</div>
+      <div class="card log" id="logPanel"><div class="empty-state">Points appear here as you log them</div></div>
+    </details>
+  </section>
+
+  <!-- ============ Set over ============ -->
+  <section id="stSetBreak" hidden>
+    <div class="card">
+      <h2 class="step-title" id="breakTitle">Set 1 is over</h2>
+      <p class="result-big" id="breakScore">25 – 18</p>
+      <p class="step-sub" style="text-align:center" id="breakWho"></p>
+      <p class="step-sub" style="margin-bottom:var(--s2)"><b>Stopping the camera between sets?</b> Stop it first, then tap the first button. If you're leaving it recording, tap the second.</p>
+      <div class="stack">
+        <button class="btn btn-big btn-dark" id="breakStopped">I stopped the camera</button>
+        <button class="btn btn-plain" id="breakRolling">Camera is still recording — start next set</button>
+      </div>
+    </div>
+    <button class="btn-link" id="breakUndo">Oops — undo that last point</button>
+  </section>
+
+  <!-- ============ Camera stopped: waiting to resume ============ -->
+  <section id="stResume" hidden>
+    <div class="card">
+      <span class="pill stopped" style="margin-bottom: var(--s2)"><span class="dot"></span>Camera stopped</span>
+      <h2 class="step-title" id="resumeTitle">Next: Set 2</h2>
+      <ol class="steps">
+        <li><span class="num">1</span><span>Press <b>RECORD</b> on the camera.</span></li>
+        <li><span class="num">2</span><span>Tap the green button below.</span></li>
+      </ol>
+    </div>
+    <div class="stack" style="margin-top: var(--s3);">
+      <button class="btn btn-big btn-go pulse" id="resumeBtn">Camera is recording again</button>
+    </div>
+  </section>
+
+  <!-- ============ Match over ============ -->
+  <section id="stMatchOver" hidden>
+    <div class="card">
+      <h2 class="step-title" id="moTitle">Match over!</h2>
+      <p class="result-big" id="moScore"></p>
+      <ol class="steps">
+        <li><span class="num">1</span><span>Stop the camera.</span></li>
+        <li><span class="num">2</span><span>Tap <b>FINISH MATCH</b>. The scores are sent automatically.</span></li>
+      </ol>
+      <button class="btn btn-big btn-go" id="finishBtn">FINISH MATCH</button>
+    </div>
+    <button class="btn-link" id="moUndo">Oops — undo that last point</button>
+  </section>
+
+  <!-- ============ Done ============ -->
+  <section id="stDone" hidden>
+    <div class="card">
+      <h2 class="step-title">All done 🎉</h2>
+      <p class="step-sub" id="doneSummary"></p>
+      <div id="doneSets"></div>
+    </div>
+    <div class="banner" id="driveStatus" hidden style="margin-top: var(--s2);"></div>
+    <div class="stack" style="margin-top: var(--s2);">
+      <button class="btn btn-dark" id="newMatchBtn">Start a new match</button>
+    </div>
+    <details class="more">
+      <summary>More options</summary>
+      <div class="stack">
+        <button class="btn btn-plain" id="exportBtn">Export match file (backup)</button>
+        <p class="more-note">Only needed if sending to Google Drive fails. On a phone this opens the share menu.</p>
+      </div>
+    </details>
+  </section>
 
 </div>
-<script>
 
+<div class="snack" id="snack"><span id="snackText"></span><button id="snackUndo">UNDO</button></div>
+
+<script>
+// ===========================================================================
+// STATE (unchanged from the previous version — checkpoint + export formats
+// are the same, so apply-match.lua and the Drive receiver don't care)
+// ===========================================================================
 let startTime = null;
 let running = false;
 let paused = false;
 let pausedTotal = 0;      // total ms the camera was stopped
 let pauseStartedAt = null;
 let events = [];
-let setHistory = [];   // {set, t1, t2, winner: 1|2|0}
+let setHistory = [];      // {set, t1, t2, winner: 1|2|0}
 let t1Score = 0, t2Score = 0, t1Sets = 0, t2Sets = 0, currentSet = 1;
 let timerInterval = null;
 let lastTapAt = 0;
 let wakeLock = null;
+let namesConfirmed = false;
+let restoreData = null;   // a saved match waiting for "Continue?"
 
 const TAP_GUARD_MS = 700;  // ignore repeat taps faster than any real rally
+const MAX_SETS = 3;
+const el = id => document.getElementById(id);
 
 async function requestWakeLock() {
-  try {
-    if ('wakeLock' in navigator) {
-      wakeLock = await navigator.wakeLock.request('screen');
-    }
-  } catch (e) {}
+  try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {}
 }
 function releaseWakeLock() {
   try { if (wakeLock) { wakeLock.release(); wakeLock = null; } } catch (e) {}
@@ -583,21 +447,11 @@ document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible' && running && !paused) requestWakeLock();
 });
 
-const el = id => document.getElementById(id);
-
 function formatTime(totalSeconds) {
   const h = Math.floor(totalSeconds / 3600);
   const m = Math.floor((totalSeconds % 3600) / 60);
   const s = Math.floor(totalSeconds % 60);
   return [h, m, s].map(v => String(v).padStart(2, '0')).join(':');
-}
-
-function srtTimestamp(totalSeconds) {
-  const h = Math.floor(totalSeconds / 3600);
-  const m = Math.floor((totalSeconds % 3600) / 60);
-  const s = Math.floor(totalSeconds % 60);
-  const ms = Math.floor((totalSeconds % 1) * 1000);
-  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')},${String(ms).padStart(3,'0')}`;
 }
 
 function currentElapsed() {
@@ -606,13 +460,64 @@ function currentElapsed() {
   const pausedNow = paused && pauseStartedAt ? (Date.now() - pauseStartedAt) : 0;
   return (Date.now() - startTime - pausedTotal - pausedNow) / 1000;
 }
-
-function updateTimerDisplay() {
-  el('timeDisplay').textContent = formatTime(currentElapsed());
-}
+function updateTimerDisplay() { el('timeDisplay').textContent = formatTime(currentElapsed()); }
 
 function teamNames() {
-  return [el('team1Name').value.trim() || 'Home Team', el('team2Name').value.trim() || 'Opponent'];
+  return [el('team1Name').value.trim() || 'Our Team', el('team2Name').value.trim() || 'Opponent'];
+}
+function setTarget(setNo) { return setNo >= 3 ? 15 : 25; }
+
+// ===========================================================================
+// SCREENS — exactly one is visible, chosen from the state
+// ===========================================================================
+function currentStage() {
+  if (restoreData) return 'restore';
+  if (!startTime) return namesConfirmed ? 'ready' : 'setup';
+  if (!running) return 'done';
+  if (paused) return 'resume';
+  const s = evaluateSet();
+  if (s.state === 'complete') return s.matchOver ? 'matchover' : 'setbreak';
+  return 'play';
+}
+
+const STAGES = { restore: 'stRestore', setup: 'stSetup', ready: 'stReady', play: 'stPlay',
+                 setbreak: 'stSetBreak', resume: 'stResume', matchover: 'stMatchOver', done: 'stDone' };
+let lastStage = null;
+
+function render() {
+  const stage = currentStage();
+  for (const [k, id] of Object.entries(STAGES)) el(id).hidden = (k !== stage);
+  if (stage !== lastStage) { window.scrollTo({ top: 0 }); lastStage = stage; }
+  // The quick-undo bar only makes sense while a just-scored point can still be taken back.
+  if (!['play', 'setbreak', 'matchover'].includes(stage)) hideSnack();
+
+  const [n1, n2] = teamNames();
+  document.querySelectorAll('.n1').forEach(e => e.textContent = n1);
+  document.querySelectorAll('.n2').forEach(e => e.textContent = n2);
+
+  if (stage === 'setup') refreshNameNote();
+  if (stage === 'ready') el('readyTeams').textContent = `${n1}  vs  ${n2}`;
+  if (stage === 'play') refreshScoreboard();
+
+  if (stage === 'setbreak') {
+    const winner = t1Score > t2Score ? n1 : n2;
+    el('breakTitle').textContent = `Set ${currentSet} is over`;
+    el('breakScore').textContent = `${t1Score} – ${t2Score}`;
+    el('breakWho').textContent = `${winner} win set ${currentSet}`;
+    el('breakRolling').textContent = `Camera is still recording — start Set ${currentSet + 1}`;
+  }
+  if (stage === 'resume') {
+    const betweenSets = t1Score === 0 && t2Score === 0 && setHistory.some(h => h.set === currentSet - 1);
+    el('resumeTitle').textContent = betweenSets ? `Next: Set ${currentSet}` : `Camera stopped during Set ${currentSet}`;
+  }
+  if (stage === 'matchover') {
+    const winner = t1Score > t2Score ? n1 : n2;
+    const w = t1Score > t2Score ? t1Sets + 1 : t2Sets + 1;
+    const l = t1Score > t2Score ? t2Sets : t1Sets;
+    el('moTitle').textContent = `${winner} win!`;
+    el('moScore').textContent = `${w} – ${l} in sets`;
+  }
+  if (stage === 'done') renderDone();
 }
 
 function refreshScoreboard() {
@@ -624,10 +529,20 @@ function refreshScoreboard() {
   el('t1Sets').textContent = t1Sets;
   el('t2Sets').textContent = t2Sets;
   el('currentSetNum').textContent = currentSet;
-  el('setTargetLabel').textContent = 'First to ' + setTarget(currentSet);
-  const pointsScored = t1Score + t2Score;
-  el('pointCount').textContent = pointsScored + ' point' + (pointsScored === 1 ? '' : 's') + ' this set';
+  el('setTargetLabel').textContent = `First to ${setTarget(currentSet)} · win by 2`;
   refreshBanner();
+}
+
+function refreshBanner() {
+  const banner = el('statusBanner');
+  const s = evaluateSet();
+  if (s.state === 'point' || s.state === 'deuce') {
+    banner.className = 'banner ' + (s.state === 'point' ? 'warn' : 'info');
+    banner.innerHTML = `<span>${s.text}</span>`;
+    banner.hidden = false;
+  } else {
+    banner.hidden = true;
+  }
 }
 
 function refreshLog() {
@@ -637,119 +552,161 @@ function refreshLog() {
     panel.innerHTML = '<div class="empty-state">Points appear here as you log them</div>';
     return;
   }
-  panel.innerHTML = realEvents.slice().reverse().map(e => {
-    return `<div class="list-row"><span class="t">${formatTime(e.t)} · Set ${e.set}</span><span class="s">${e.team1} – ${e.team2}</span></div>`;
+  panel.innerHTML = realEvents.slice().reverse().map(e =>
+    `<div class="list-row"><span class="l">${formatTime(e.t)} · Set ${e.set}</span><span class="r">${e.team1} – ${e.team2}</span></div>`
+  ).join('');
+}
+
+function refreshSetHistory() {
+  const title = el('setHistoryTitle'), panel = el('setHistoryPanel');
+  if (setHistory.length === 0) { title.hidden = true; panel.hidden = true; return; }
+  const [n1, n2] = teamNames();
+  title.hidden = false; panel.hidden = false;
+  panel.innerHTML = setHistory.map(s => {
+    const w = s.winner === 1 ? n1 : (s.winner === 2 ? n2 : 'Tied');
+    return `<div class="list-row"><span class="l">Set ${s.set} · ${w}</span><span class="r">${s.t1} – ${s.t2}</span></div>`;
   }).join('');
 }
 
+// ===========================================================================
+// TEAM NAMES (step 1). Opponent is required. Names are checked against the
+// same width estimate the video scoreboard uses, so a name that would be cut
+// off with "..." gets flagged here, while it can still be shortened.
+// ===========================================================================
+const CHAR_W = {
+  " ": 0.42, "i": 0.45, "l": 0.45, "I": 0.45, "j": 0.45, ".": 0.45, ",": 0.45, "'": 0.45,
+  "!": 0.45, ":": 0.45, ";": 0.45, "f": 0.60, "t": 0.60, "r": 0.60,
+  "W": 1.35, "M": 1.35, "m": 1.35, "w": 1.35,
+};
+const NAME_MAX_UNITS = 21.3;   // apply-match.lua: NAME_MAX_W 0.246 / NAME_CHAR_W 0.0115
+// The video scoreboard shows names in CAPITALS, so measure the capitalised form.
+function nameUnits(s) { let u = 0; for (const c of s.toUpperCase()) u += (CHAR_W[c] ?? 1.0); return u; }
+function fittedName(s) {
+  s = s.toUpperCase();
+  if (nameUnits(s) <= NAME_MAX_UNITS) return s;
+  let t = s;
+  while (t.length > 1) { t = t.slice(0, -1).replace(/\s+$/, ''); if (nameUnits(t + '...') <= NAME_MAX_UNITS) return t + '...'; }
+  return '...';
+}
+function refreshNameNote() {
+  const note = el('nameNote');
+  const n2 = el('team2Name').value.trim();
+  el('setupNext').disabled = n2.length === 0 || el('team1Name').value.trim().length === 0;
+  const long = [el('team1Name').value.trim(), n2].find(n => n && nameUnits(n) > NAME_MAX_UNITS);
+  if (long) {
+    note.className = 'field-note warn';
+    note.textContent = `"${long}" is too long for the video scoreboard — it would show as "${fittedName(long)}". Try a shorter version.`;
+  } else {
+    note.className = 'field-note';
+    note.textContent = n2 ? 'Looks good.' : 'Type the opponent\'s name to continue. It shows on the scoreboard in the video.';
+  }
+}
+['team1Name', 'team2Name'].forEach(id => el(id).addEventListener('input', refreshNameNote));
+el('setupNext').addEventListener('click', () => {
+  if (el('team2Name').value.trim() === '') return;
+  namesConfirmed = true;
+  el('team1Name').blur(); el('team2Name').blur();
+  render();
+});
+el('readyBack').addEventListener('click', () => { namesConfirmed = false; render(); });
+
+// ===========================================================================
+// SAVE / RESTORE
+// ===========================================================================
 function saveCheckpoint() {
   try {
-    const data = {
+    localStorage.setItem('vbScorekeeperCheckpoint', JSON.stringify({
       startTime, running, paused, pausedTotal, pauseStartedAt, events, setHistory,
       t1Score, t2Score, t1Sets, t2Sets, currentSet,
       team1Name: el('team1Name').value, team2Name: el('team2Name').value
-    };
-    localStorage.setItem('vbScorekeeperCheckpoint', JSON.stringify(data));
+    }));
   } catch (e) {}
 }
+function clearCheckpoint() { try { localStorage.removeItem('vbScorekeeperCheckpoint'); } catch (e) {} }
 
-function clearCheckpoint() {
-  try { localStorage.removeItem('vbScorekeeperCheckpoint'); } catch (e) {}
-}
-
-function setRecordingUI(isRestored) {
-  el('startBtn').style.display = 'none';
-  el('stopBtn').style.display = 'block';
-  el('endMatchNote').style.display = 'block';
-  el('statusText').textContent = isRestored ? 'Recording · restored' : 'Recording';
-  el('statusPill').classList.add('live');
-  el('setupPanel').style.opacity = '0.5';
-  el('setupPanel').querySelectorAll('input').forEach(i => i.disabled = true);
+function startTimerAndLock() {
+  clearInterval(timerInterval);
   timerInterval = setInterval(updateTimerDisplay, 200);
+  updateTimerDisplay();
+  if (!paused) requestWakeLock();
 }
 
-function tryRestoreCheckpoint() {
-  let saved;
-  try { saved = localStorage.getItem('vbScorekeeperCheckpoint'); } catch (e) { return; }
-  if (!saved) return;
-  let data;
-  try { data = JSON.parse(saved); } catch (e) { return; }
-  if (!data.running) return;
-  const mins = Math.floor((Date.now() - data.startTime) / 60000);
-  if (!confirm(`A match in progress was found (started ~${mins} min ago, ${data.events.length} points logged). Restore it?`)) {
-    clearCheckpoint();
-    return;
-  }
+function checkForSavedMatch() {
+  let data = null;
+  try { data = JSON.parse(localStorage.getItem('vbScorekeeperCheckpoint')); } catch (e) {}
+  if (!data || !data.running) return;
+  restoreData = data;
+  const mins = Math.max(0, Math.floor((Date.now() - data.startTime) / 60000));
+  const n2 = (data.team2Name || 'Opponent').trim() || 'Opponent';
+  const n1 = (data.team1Name || 'Our Team').trim() || 'Our Team';
+  el('restoreInfo').innerHTML =
+    `<b>${n1} vs ${n2}</b><br>Set ${data.currentSet}, ${data.t1Score} – ${data.t2Score}` +
+    `${data.paused ? ' · camera stopped' : ''}<br>Started ${mins} min ago`;
+}
+
+el('restoreYes').addEventListener('click', () => {
+  const data = restoreData;
+  restoreData = null;
   startTime = data.startTime;
   running = true;
   paused = data.paused || false;
   pausedTotal = data.pausedTotal || 0;
   pauseStartedAt = data.pauseStartedAt || null;
   events = data.events;
-  // Repair matches saved by the old version, where repeated End Set taps after
-  // the final set stored duplicate copies of it: keep one entry per set and
-  // recount set wins from what's left.
-  const seenSets = new Set();
-  setHistory = (data.setHistory || []).filter(h => !seenSets.has(h.set) && seenSets.add(h.set));
-  t1Score = data.t1Score;
-  t2Score = data.t2Score;
+  // Repair matches saved by an older version, where repeated End Set taps after
+  // the final set stored duplicate copies of it.
+  const seen = new Set();
+  setHistory = (data.setHistory || []).filter(h => !seen.has(h.set) && seen.add(h.set));
+  t1Score = data.t1Score; t2Score = data.t2Score;
   t1Sets = setHistory.filter(h => h.winner === 1).length;
   t2Sets = setHistory.filter(h => h.winner === 2).length;
   currentSet = data.currentSet;
   el('team1Name').value = data.team1Name;
   el('team2Name').value = data.team2Name;
-  setRecordingUI(true);
-  if (paused) {
-    el('pauseBtn').textContent = 'Resume Recording';
-    el('pauseBtn').classList.add('resume');
-    el('statusText').textContent = 'Camera stopped';
-    el('statusPill').classList.remove('live');
-  } else {
-    requestWakeLock();
-  }
-  refreshScoreboard();
-  refreshLog();
-  refreshSetHistory();
-  el('exportBtn').disabled = events.length === 0;
-}
+  namesConfirmed = true;
+  startTimerAndLock();
+  refreshLog(); refreshSetHistory();
+  render();
+});
 
+// Throwing a match away is permanent, so it takes two taps.
+let discardArmed = null;
+el('restoreNo').addEventListener('click', () => {
+  const b = el('restoreNo');
+  if (!discardArmed) {
+    b.classList.add('armed');
+    b.textContent = 'Tap again to throw it away — this can\'t be undone';
+    discardArmed = setTimeout(() => { discardArmed = null; b.classList.remove('armed'); b.textContent = 'Throw it away and start a new match'; }, 4000);
+    return;
+  }
+  clearTimeout(discardArmed); discardArmed = null;
+  restoreData = null;
+  clearCheckpoint();
+  render();
+});
+
+// ===========================================================================
+// SCORING
+// ===========================================================================
 function logEvent() {
   if (!running) return;
   events.push({ t: currentElapsed(), team1: t1Score, team2: t2Score, set: currentSet });
-  refreshScoreboard();
   refreshLog();
-  el('exportBtn').disabled = events.length === 0;
   saveCheckpoint();
+  render();
 }
 
 el('startBtn').addEventListener('click', () => {
   startTime = Date.now();
   running = true;
-  setRecordingUI(false);
-  events.push({ t: 0, team1: 0, team2: 0, set: currentSet });
+  paused = false; pausedTotal = 0; pauseStartedAt = null;
+  events = [{ t: 0, team1: 0, team2: 0, set: currentSet }];
+  startTimerAndLock();
   refreshLog();
-  requestWakeLock();
   saveCheckpoint();
+  buzz(40);
+  render();
 });
-
-el('stopBtn').addEventListener('click', () => {
-  if (!running) return;
-  running = false;
-  clearInterval(timerInterval);
-  el('statusText').textContent = 'Match ended';
-  el('statusPill').classList.remove('live');
-  el('stopBtn').style.display = 'none';
-  el('endMatchNote').style.display = 'none';
-  events.push({ t: currentElapsed(), team1: t1Score, team2: t2Score, set: currentSet, isEnd: true });
-  refreshLog();
-  el('exportBtn').disabled = false;
-  el('newMatchBtn').style.display = 'block';
-  releaseWakeLock();
-  saveCheckpoint();
-});
-
-const MAX_SETS = 3;
-function setTarget(setNo) { return setNo >= 3 ? 15 : 25; }
 
 function evaluateSet() {
   const target = setTarget(currentSet);
@@ -761,17 +718,10 @@ function evaluateSet() {
 
   if (hi >= target && (hi - lo) >= 2) {
     const setsAfter = (leaderNum === 1 ? t1Sets : t2Sets) + 1;
-    const matchOver = setsAfter >= 2;
-    return {
-      state: 'complete',
-      team: leaderNum,
-      text: matchOver ? `${leaderName} wins the match` : `${leaderName} wins set ${currentSet}`,
-      matchOver
-    };
+    return { state: 'complete', team: leaderNum, matchOver: setsAfter >= 2 || currentSet >= MAX_SETS };
   }
-
   if (t1Score >= target - 1 && t2Score >= target - 1) {
-    if (hi === lo) return { state: 'deuce', text: `Deuce at ${hi}–${hi} · must win by 2` };
+    if (hi === lo) return { state: 'deuce', text: `Tied ${hi}–${hi} · must win by 2` };
     const wouldWin = (hi + 1 >= target) && ((hi + 1) - lo >= 2);
     if (wouldWin) {
       const setsAfter = (leaderNum === 1 ? t1Sets : t2Sets) + 1;
@@ -779,89 +729,11 @@ function evaluateSet() {
     }
     return { state: 'deuce', text: `Advantage ${leaderName} · must win by 2` };
   }
-
   if (hi > 0 && (hi + 1 >= target) && ((hi + 1) - lo >= 2)) {
     const setsAfter = (leaderNum === 1 ? t1Sets : t2Sets) + 1;
     return { state: 'point', text: `${setsAfter >= 2 ? 'Match' : 'Set'} point — ${leaderName}` };
   }
-
   return { state: 'none' };
-}
-
-function refreshBanner() {
-  const banner = el('statusBanner');
-  if (!running) { banner.style.display = 'none'; return; }
-  const s = evaluateSet();
-
-  if (s.state === 'complete') {
-    banner.className = 'banner done';
-    banner.style.display = 'flex';
-    if (s.matchOver) {
-      // Ending the match is a one-tap shortcut worth keeping here: it closes the
-      // final set AND stops the match, which would otherwise be two buttons in
-      // two different places.
-      banner.innerHTML = `<span>${s.text}</span><button id="bannerEndSet"><span>End Match</span></button>`;
-      el('bannerEndSet').addEventListener('click', () => {
-        endSet();
-        el('stopBtn').click();
-      });
-    } else {
-      // No button for a normal set end. There's already an End Set button in the
-      // Between sets card, and two controls with the same label on screen at
-      // once is just confusing — worse, the one in the card is the one that sits
-      // in the right tap order, after Camera Stopped.
-      banner.innerHTML = `<span>${s.text} — tap <b>End Set</b> below</span>`;
-    }
-  } else if (s.state === 'point') {
-    banner.className = 'banner warn';
-    banner.style.display = 'flex';
-    banner.innerHTML = `<span>${s.text}</span>`;
-  } else if (s.state === 'deuce') {
-    banner.className = 'banner info';
-    banner.style.display = 'flex';
-    banner.innerHTML = `<span>${s.text}</span>`;
-  } else {
-    banner.style.display = 'none';
-  }
-}
-
-function endSet() {
-  if (!running) return;
-  if (t1Score === 0 && t2Score === 0) return;
-  // After the LAST set, End Set leaves the final score on screen (no 0-0 reset),
-  // so the guard above never fired and every extra tap added another copy of the
-  // same set to Completed Sets — and another set win to the tally. A set can
-  // only be ended once.
-  const lastDone = setHistory[setHistory.length - 1];
-  if (lastDone && lastDone.set === currentSet) {
-    showToast(`Set ${currentSet} is already ended. Tap End Match at the top to finish the match.`);
-    return;
-  }
-  let winner = 0;
-  if (t1Score > t2Score) { t1Sets++; winner = 1; }
-  else if (t2Score > t1Score) { t2Sets++; winner = 2; }
-  setHistory.push({ set: currentSet, t1: t1Score, t2: t2Score, winner });
-
-  // Only reset the score if another set is actually going to be played.
-  //
-  // Two ways the match can be over: someone has taken two sets (so a 2-0 needs
-  // no third), or we've reached the third set. Getting this wrong left the
-  // exported match ending on 0-0 — the winning score was wiped a moment after
-  // it was scored, and the overlay faithfully showed a blank scoreboard as the
-  // final frame. The 2-0 case is the easy one to miss, since a straight-sets
-  // win ends at set 2 while MAX_SETS still says 3.
-  const matchOver = (t1Sets >= 2 || t2Sets >= 2);
-
-  if (!matchOver && currentSet < MAX_SETS) {
-    currentSet++;
-    t1Score = 0;
-    t2Score = 0;
-    logEvent();
-  } else {
-    refreshScoreboard();
-    saveCheckpoint();
-  }
-  refreshSetHistory();
 }
 
 function guardedTap() {
@@ -871,343 +743,391 @@ function guardedTap() {
   return true;
 }
 
-// Once a set is won, stop accepting points. The rules already tell us the set
-// is over — 25 (15 in the third) with a two-point lead — so continuing to score
-// produces a match that can't have happened, and the overlay faithfully renders
-// it. The banner's End Set button is the way forward from here; Undo Last backs
-// out if the winning point was logged in error.
-function setIsOver() {
-  return evaluateSet().state === 'complete';
+function buzz(ms) { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {} }
+
+// Clear feedback that a tap registered: the button flashes, the number pops,
+// Android phones vibrate (iPhones don't allow it from a web page).
+function tapFeedback(team) {
+  const btn = el(team === 1 ? 't1Plus' : 't2Plus');
+  const score = el(team === 1 ? 't1Score' : 't2Score');
+  btn.classList.remove('flash'); score.classList.remove('pop');
+  void btn.offsetWidth;
+  btn.classList.add('flash'); score.classList.add('pop');
+  buzz(30);
 }
 
-// +1 while the camera is stopped used to be ignored silently, so forgetting
-// Resume Recording quietly lost the first rallies of the next set. Now it says
-// so and scrolls the Resume button into view.
-let toastTimer = null;
-function showToast(msg) {
-  let t = document.getElementById('toast');
-  if (!t) {
-    t = document.createElement('div');
-    t.id = 'toast';
-    t.className = 'toast';
-    t.setAttribute('role', 'alert');
-    document.body.appendChild(t);
+function addPoint(team) {
+  if (!running || paused || evaluateSet().state === 'complete' || !guardedTap()) return;
+  if (team === 1) t1Score++; else t2Score++;
+  logEvent();
+  tapFeedback(team);
+  const [n1, n2] = teamNames();
+  showSnack(`Point: ${team === 1 ? n1 : n2}  (${t1Score}–${t2Score})`);
+}
+el('t1Plus').addEventListener('click', () => addPoint(1));
+el('t2Plus').addEventListener('click', () => addPoint(2));
+
+// ---- Quick undo snackbar: shown for 5 s after every point ----
+let snackTimer = null;
+function showSnack(text) {
+  el('snackText').textContent = text;
+  el('snack').classList.add('show');
+  clearTimeout(snackTimer);
+  snackTimer = setTimeout(hideSnack, 5000);
+}
+function hideSnack() { el('snack').classList.remove('show'); }
+el('snackUndo').addEventListener('click', () => { hideSnack(); undoLast(); });
+
+// Undo only takes back POINTS in the current set. It never un-does a set
+// change (that would leave the sets tally and completed-sets list wrong).
+function undoLast() {
+  if (!running || events.length <= 1) return;
+  const last = events[events.length - 1];
+  const prev = events[events.length - 2];
+  if (last.set !== prev.set || (last.team1 === 0 && last.team2 === 0)) {
+    showToast('Nothing to undo in this set.');
+    return;
   }
-  t.textContent = msg;
-  t.classList.add('show');
-  if (toastTimer) clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('show'), 3500);
+  events.pop();
+  const now = events[events.length - 1];
+  t1Score = now.team1; t2Score = now.team2; currentSet = now.set;
+  refreshLog();
+  saveCheckpoint();
+  showToast(`Undone — score is now ${t1Score}–${t2Score}`);
+  render();
 }
-function warnIfStopped() {
-  if (!running || !paused) return false;
-  showToast('Camera is stopped — tap Resume Recording first. That point was not counted.');
-  el('pauseBtn').scrollIntoView({ behavior: 'smooth', block: 'center' });
-  return true;
-}
+el('undoBtn').addEventListener('click', undoLast);
+el('breakUndo').addEventListener('click', undoLast);
+el('moUndo').addEventListener('click', undoLast);
 
-el('t1Plus').addEventListener('click', () => {
-  if (warnIfStopped()) return;
-  if (!running || paused || setIsOver() || !guardedTap()) return;
-  t1Score++; logEvent();
-});
-el('t2Plus').addEventListener('click', () => {
-  if (warnIfStopped()) return;
-  if (!running || paused || setIsOver() || !guardedTap()) return;
-  t2Score++; logEvent();
-});
-// Minus removes the most recent point THAT TEAM scored, rather than appending a
-// lower score. The old behaviour logged a new event going backwards, so a
-// mis-tap corrected with minus left a real 15 -> 16 -> 15 in the exported data,
-// and the scoreboard overlay would visibly flicker at that moment.
-//
-// Deleting the point and shifting every later score down by one means the export
-// never contains a score that goes backwards — whether you catch the mistake
-// straight away or five rallies later.
-//
-// Scoped to the CURRENT SET on purpose. Reaching back into a finished set could
-// change who won it, which would cascade into the sets tally and possibly the
-// match result. If there's nothing to remove in this set, the button does
-// nothing rather than silently rewriting history.
+// Remove that team's most recent point in THIS set, shifting later scores down,
+// so the export never contains a score going backwards.
 function removeLastPoint(team) {
   if (!running) return;
   const key = team === 1 ? 'team1' : 'team2';
-
   let idx = -1;
   for (let i = events.length - 1; i >= 1; i--) {
     if (events[i].set !== currentSet) break;
     const prev = events[i - 1];
     if (prev.set === currentSet && events[i][key] === prev[key] + 1) { idx = i; break; }
   }
-  if (idx === -1) return;
-
+  if (idx === -1) { showToast('That team has no points to remove in this set.'); return; }
   events.splice(idx, 1);
   for (let i = idx; i < events.length; i++) {
     if (events[i].set !== currentSet) break;
     events[i][key] -= 1;
   }
-
   const last = events[events.length - 1];
-  t1Score = last.team1;
-  t2Score = last.team2;
-  currentSet = last.set;
-
-  refreshScoreboard();
-  refreshLog();
-  el('exportBtn').disabled = events.length === 0;
-  saveCheckpoint();
+  t1Score = last.team1; t2Score = last.team2; currentSet = last.set;
+  refreshLog(); saveCheckpoint();
+  showToast(`Point removed — score is now ${t1Score}–${t2Score}`);
+  render();
 }
-
 el('t1Minus').addEventListener('click', () => removeLastPoint(1));
 el('t2Minus').addEventListener('click', () => removeLastPoint(2));
 
-// Stopping needs two taps. A stray brush against this button while reaching for
-// +1 doesn't just block scoring — the paused stretch is subtracted from every
-// timestamp after it, so an accidental 5-second pause drifts the whole overlay
-// by 5 seconds for the rest of the match, silently and unrecoverably.
-//
-// Restarting stays a single tap: by then you're deliberately holding the phone,
-// not hammering +1, and you want play to resume without ceremony.
-let pauseArmed = false;
-let pauseArmTimer = null;
-
-function disarmPause() {
-  pauseArmed = false;
-  if (pauseArmTimer) { clearTimeout(pauseArmTimer); pauseArmTimer = null; }
-  const b = el('pauseBtn');
-  // Labels say what tapping DOES, not the current state — the status pill at
-  // the top already shows the state ("Recording" / "Camera stopped").
-  b.textContent = paused ? 'Resume Recording' : 'Stop Recording';
-  b.classList.remove('armed');
-  b.classList.toggle('resume', paused);
+// ===========================================================================
+// SET / CAMERA / MATCH TRANSITIONS
+// ===========================================================================
+function endSet() {
+  if (!running) return;
+  if (t1Score === 0 && t2Score === 0) return;
+  const lastDone = setHistory[setHistory.length - 1];
+  if (lastDone && lastDone.set === currentSet) return;   // a set can only be ended once
+  let winner = 0;
+  if (t1Score > t2Score) { t1Sets++; winner = 1; }
+  else if (t2Score > t1Score) { t2Sets++; winner = 2; }
+  setHistory.push({ set: currentSet, t1: t1Score, t2: t2Score, winner });
+  // Only reset to 0-0 if another set will be played (a 2-0 win ends at set 2).
+  const matchOver = (t1Sets >= 2 || t2Sets >= 2);
+  if (!matchOver && currentSet < MAX_SETS) {
+    currentSet++;
+    t1Score = 0; t2Score = 0;
+    logEvent();                       // the new set's 0-0 marker
+  } else {
+    saveCheckpoint();
+  }
+  refreshSetHistory();
 }
 
-el('pauseBtn').addEventListener('click', () => {
-  if (!running) return;
+function pauseCamera() {
+  if (!running || paused) return;
+  paused = true;
+  pauseStartedAt = Date.now();
+  releaseWakeLock();
+  saveCheckpoint();
+}
+function resumeCamera() {
+  if (!running || !paused) return;
+  pausedTotal += (Date.now() - pauseStartedAt);
+  paused = false;
+  pauseStartedAt = null;
+  requestWakeLock();
+  saveCheckpoint();
+}
 
-  if (!paused && !pauseArmed) {
-    pauseArmed = true;
-    const b = el('pauseBtn');
-    b.textContent = 'Tap again to confirm stop';
+function endMatch() {
+  if (!running) return;
+  running = false;
+  if (paused) { pausedTotal += (Date.now() - pauseStartedAt); paused = false; pauseStartedAt = null; }
+  clearInterval(timerInterval);
+  events.push({ t: currentElapsed(), team1: t1Score, team2: t2Score, set: currentSet, isEnd: true });
+  refreshLog();
+  releaseWakeLock();
+  saveCheckpoint();
+  hideSnack();
+  render();
+  queueDriveUpload();
+}
+
+// Set break. "I stopped the camera": pause first, THEN end the set, so the
+// next set's 0-0 is stamped at the moment the camera stopped. Auto set
+// alignment in apply-match.lua then snaps it to the real clip join anyway.
+el('breakStopped').addEventListener('click', () => { pauseCamera(); endSet(); buzz(30); render(); });
+el('breakRolling').addEventListener('click', () => { endSet(); buzz(30); render(); });
+el('resumeBtn').addEventListener('click', () => { resumeCamera(); buzz(40); render(); });
+el('finishBtn').addEventListener('click', () => { endSet(); endMatch(); buzz(60); });
+
+// Mid-set camera stop (rare). Two taps, because a stray pause shifts every
+// later timestamp.
+let pauseArmed = null;
+el('pauseBtn').addEventListener('click', () => {
+  const b = el('pauseBtn');
+  if (!pauseArmed) {
     b.classList.add('armed');
-    pauseArmTimer = setTimeout(disarmPause, 4000);
+    b.textContent = 'Tap again if the camera really stopped';
+    pauseArmed = setTimeout(() => { pauseArmed = null; b.classList.remove('armed'); b.textContent = 'Camera stopped mid-set (timeout, battery…)'; }, 4000);
     return;
   }
-  disarmPause();
-
-  if (!paused) {
-    paused = true;
-    pauseStartedAt = Date.now();
-    el('pauseBtn').textContent = 'Resume Recording';
-    el('pauseBtn').classList.add('resume');
-    el('statusText').textContent = 'Camera stopped';
-    el('statusPill').classList.remove('live');
-    releaseWakeLock();
-  } else {
-    pausedTotal += (Date.now() - pauseStartedAt);
-    paused = false;
-    pauseStartedAt = null;
-    el('pauseBtn').textContent = 'Stop Recording';
-    el('pauseBtn').classList.remove('resume');
-    el('statusText').textContent = 'Recording';
-    el('statusPill').classList.add('live');
-    requestWakeLock();
-  }
-  saveCheckpoint();
+  clearTimeout(pauseArmed); pauseArmed = null;
+  b.classList.remove('armed'); b.textContent = 'Camera stopped mid-set (timeout, battery…)';
+  el('playMore').open = false;
+  pauseCamera();
+  render();
 });
 
+// Ending early (forfeit, out of time). Two taps.
+let stopArmed = null;
+el('stopBtn').addEventListener('click', () => {
+  const b = el('stopBtn');
+  if (!stopArmed) {
+    b.classList.add('armed');
+    b.textContent = 'Tap again to end the match now';
+    stopArmed = setTimeout(() => { stopArmed = null; b.classList.remove('armed'); b.textContent = 'End match early (forfeit / out of time)'; }, 4000);
+    return;
+  }
+  clearTimeout(stopArmed); stopArmed = null;
+  b.classList.remove('armed'); b.textContent = 'End match early (forfeit / out of time)';
+  el('playMore').open = false;
+  endMatch();
+});
+
+// ===========================================================================
+// DONE SCREEN / NEW MATCH
+// ===========================================================================
+function renderDone() {
+  const [n1, n2] = teamNames();
+  el('doneSummary').innerHTML = t1Sets === t2Sets
+    ? `<b>${n1} vs ${n2}</b> — ${t1Sets}–${t2Sets} in sets`
+    : `<b>${t1Sets > t2Sets ? n1 : n2}</b> won ${Math.max(t1Sets, t2Sets)}–${Math.min(t1Sets, t2Sets)} against ${t1Sets > t2Sets ? n2 : n1}`;
+  el('doneSets').innerHTML = setHistory.map(s =>
+    `<div class="list-row"><span class="l">Set ${s.set}</span><span class="r">${s.t1} – ${s.t2}</span></div>`
+  ).join('');
+  refreshDriveStatus();
+}
+
+let newArmed = null;
 el('newMatchBtn').addEventListener('click', () => {
-  if (!confirm('Clear all scores and start a fresh match? Make sure you have exported the last one.')) return;
+  const b = el('newMatchBtn');
+  const unsent = DRIVE_URL && loadPending().length > 0;
+  if (unsent && !newArmed) {
+    b.classList.add('armed');
+    b.textContent = 'Not sent yet — tap again to start anyway';
+    newArmed = setTimeout(() => { newArmed = null; b.classList.remove('armed'); b.textContent = 'Start a new match'; }, 5000);
+    return;
+  }
+  clearTimeout(newArmed); newArmed = null;
+  b.classList.remove('armed'); b.textContent = 'Start a new match';
   startTime = null; running = false; paused = false;
   pausedTotal = 0; pauseStartedAt = null;
-  events = [];
-  setHistory = [];
+  events = []; setHistory = [];
   t1Score = 0; t2Score = 0; t1Sets = 0; t2Sets = 0; currentSet = 1;
   clearInterval(timerInterval);
   clearCheckpoint();
-  el('timeDisplay').textContent = '00:00:00';
-  el('statusText').textContent = 'Not started';
-  el('statusPill').classList.remove('live');
-  el('startBtn').style.display = 'block';
-  el('stopBtn').style.display = 'none';
-  el('endMatchNote').style.display = 'none';
-  el('newMatchBtn').style.display = 'none';
-  disarmPause();  // clear any half-armed confirm when starting a fresh match
-  el('exportBtn').disabled = true;
-  el('offsetInput').value = 0;
-  el('setupPanel').style.opacity = '1';
-  el('setupPanel').querySelectorAll('input').forEach(i => i.disabled = false);
+  namesConfirmed = false;
   el('team2Name').value = '';
-  refreshScoreboard();
-  refreshLog();
-  refreshSetHistory();
+  el('offsetInput').value = 0;
+  el('driveStatus').hidden = true;
+  refreshLog(); refreshSetHistory();
+  render();
 });
 
-el('newSetBtn').addEventListener('click', endSet);
-
-function refreshSetHistory() {
-  const title = el('setHistoryTitle');
-  const panel = el('setHistoryPanel');
-  if (setHistory.length === 0) {
-    title.style.display = 'none';
-    panel.style.display = 'none';
-    return;
-  }
-  const [n1, n2] = teamNames();
-  title.style.display = 'block';
-  panel.style.display = 'block';
-  panel.innerHTML = setHistory.map(s => {
-    const winnerName = s.winner === 1 ? n1 : (s.winner === 2 ? n2 : 'Tied');
-    const badge = s.winner === 0
-      ? '<span class="badge tie">Tied</span>'
-      : '<span class="badge">Won</span>';
-    return `<div class="list-row">
-      <span class="lead"><span class="set-no">SET ${s.set}</span><span class="winner">${winnerName}</span>${badge}</span>
-      <span class="final">${s.t1} – ${s.t2}</span>
-    </div>`;
-  }).join('');
-}
-
-el('undoBtn').addEventListener('click', () => {
-  if (!running || events.length <= 1) return;
-  events.pop();
-  const last = events[events.length - 1];
-  t1Score = last.team1;
-  t2Score = last.team2;
-  currentSet = last.set;
-  refreshScoreboard();
-  refreshLog();
-  saveCheckpoint();
-});
-
-// Build the match file that apply-match.lua reads.
-//
-// Two things are derived here rather than tracked during the match:
-//
-//   sets1 / sets2 — sets won going INTO each set, from setHistory. The old SRT
-//   export wrote the FINAL tally on every line, so a point from set 1 displayed
-//   the end-of-match set score. This fixes that.
-//
-//   serve — volleyball is rally scoring, so whoever wins a point serves the
-//   next one. The one thing that genuinely can't be inferred is who serves the
-//   very first point of a set, so we emit serve: 0 there and the overlay simply
-//   shows no ball until the first rally is won. Better to show nothing than to
-//   guess, and it's one less thing to do courtside.
-//
-// There is deliberately no fps field. Times are in seconds so the same file
-// works at 24, 30 or 60fps — apply-match.lua reads the real rate from the
-// Fusion composition.
+// ===========================================================================
+// MATCH FILE (read by apply-match.lua). Unchanged format.
+// ===========================================================================
 function buildMatchData() {
   const offset = parseFloat(el('offsetInput').value) || 0;
   const [n1, n2] = teamNames();
-
-  // Sets tally, derived from the events themselves rather than setHistory — so
-  // it's correct even if End Set hasn't been pressed yet.
-  //
-  // Crucially it counts the set being played the INSTANT it's decided. The
-  // previous version only counted sets you'd already finished, so the winning
-  // point of the third set displayed 1-1 instead of 2-1 — the scoreboard showed
-  // a match-winning score next to a tally that said nobody had won it.
   const targetFor = (setNo) => (setNo >= 3 ? 15 : 25);
   const isDecided = (e) => {
     const hi = Math.max(e.team1, e.team2), lo = Math.min(e.team1, e.team2);
     return hi >= targetFor(e.set) && hi - lo >= 2;
   };
-
   const wonBy = {};
-  for (const e of events) {
-    if (isDecided(e)) wonBy[e.set] = e.team1 > e.team2 ? 1 : 2;
-  }
-
+  for (const e of events) if (isDecided(e)) wonBy[e.set] = e.team1 > e.team2 ? 1 : 2;
   const setsAt = (e) => {
     let a = 0, b = 0;
-    for (const k in wonBy) {
-      if (Number(k) < e.set) (wonBy[k] === 1 ? a++ : b++);
-    }
+    for (const k in wonBy) if (Number(k) < e.set) (wonBy[k] === 1 ? a++ : b++);
     if (isDecided(e)) (e.team1 > e.team2 ? a++ : b++);
     return [a, b];
   };
-
   const out = [];
   for (let i = 0; i < events.length; i++) {
-    const e = events[i];
-    const prev = events[i - 1];
+    const e = events[i], prev = events[i - 1];
     const [s1, s2] = setsAt(e);
-
-    // 0 = unknown, show no ball. Only ever applies to the opening 0-0 of a set.
     let serve;
-    if (!prev || prev.set !== e.set) {
-      serve = 0;
-    } else if (e.team1 > prev.team1) {
-      serve = 1;
-    } else if (e.team2 > prev.team2) {
-      serve = 2;
-    } else {
-      serve = out.length ? out[out.length - 1].serve : 0;
-    }
-
-    out.push({
-      t: Math.round(Math.max(0, e.t + offset) * 1000) / 1000,
-      set: e.set,
-      score1: e.team1,
-      score2: e.team2,
-      sets1: s1,
-      sets2: s2,
-      serve: serve
-    });
+    if (!prev || prev.set !== e.set) serve = 0;                 // first point of a set: unknown
+    else if (e.team1 > prev.team1) serve = 1;                   // rally scoring: winner serves
+    else if (e.team2 > prev.team2) serve = 2;
+    else serve = out.length ? out[out.length - 1].serve : 0;
+    out.push({ t: Math.round(Math.max(0, e.t + offset) * 1000) / 1000, set: e.set,
+               score1: e.team1, score2: e.team2, sets1: s1, sets2: s2, serve });
   }
-
-  return {
-    version: 1,
-    team1: n1,
-    team2: n2,
-    date: new Date().toISOString().slice(0, 10),
-    offset: 0,
-    events: out
-  };
+  return { version: 1, team1: n1, team2: n2, date: localDate(), offset: 0, events: out };
 }
 
+// The phone's LOCAL date (toISOString() is UTC, which rolls over at 8 pm in Toronto).
+function localDate() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+function matchFilename() {
+  const [n1, n2] = teamNames();
+  const safe = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  return `${localDate()}-${safe(n1)}-vs-${safe(n2)}.json`;
+}
+
+// ===========================================================================
+// AUTO-SEND TO GOOGLE DRIVE (scorekeeper-drive-upload.gs in your Google account)
+// Kept on the phone first, then sent; retries on reopen / back online /
+// back to foreground until Drive confirms.
+// ===========================================================================
+const DRIVE_URL = '';   // your Apps Script web-app URL (…/exec) — empty = auto-send off
+const DRIVE_KEY = 'CHANGE-ME';   // must match SECRET_KEY in scorekeeper-drive-upload.gs
+const PENDING_KEY = 'vbPendingUploads';
+const LASTSENT_KEY = 'vbLastSent';
+
+function loadPending() { try { return JSON.parse(localStorage.getItem(PENDING_KEY)) || []; } catch (e) { return []; } }
+function savePending(list) { try { localStorage.setItem(PENDING_KEY, JSON.stringify(list)); } catch (e) {} }
+
+function showDriveStatus(kind, html) {
+  const b = el('driveStatus');
+  b.className = 'banner ' + kind;
+  b.innerHTML = html;
+  b.hidden = false;
+  const retry = document.getElementById('driveRetry');
+  if (retry) retry.addEventListener('click', () => flushDriveUploads(true));
+}
+
+function queueDriveUpload() {
+  if (!DRIVE_URL || events.length === 0) return;
+  const filename = matchFilename();
+  const list = loadPending().filter(p => p.filename !== filename);
+  list.push({ filename, match: buildMatchData(), queuedAt: Date.now() });
+  savePending(list);
+  flushDriveUploads(true);
+}
+
+let flushing = false;
+async function flushDriveUploads(showProgress) {
+  if (!DRIVE_URL || flushing) return;
+  let list = loadPending();
+  if (list.length === 0) return;
+  flushing = true;
+  if (showProgress) showDriveStatus('info', `<span>Sending scores to Google Drive…</span>`);
+  try {
+    for (const item of [...list]) {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 25000);
+      let ok = false;
+      try {
+        const res = await fetch(DRIVE_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },   // "simple" request, no CORS preflight
+          body: JSON.stringify({ key: DRIVE_KEY, filename: item.filename, match: item.match }),
+          signal: ctrl.signal
+        });
+        const reply = await res.json();
+        ok = !!(reply && reply.ok);
+      } catch (e) { ok = false; }
+      finally { clearTimeout(timer); }
+      if (!ok) break;
+      list = list.filter(p => p.filename !== item.filename);
+      savePending(list);
+      try { localStorage.setItem(LASTSENT_KEY, JSON.stringify({ filename: item.filename, at: Date.now() })); } catch (e) {}
+    }
+  } finally { flushing = false; }
+  refreshDriveStatus();
+}
+
+function refreshDriveStatus() {
+  if (!DRIVE_URL) return;
+  if (loadPending().length > 0) {
+    showDriveStatus('warn',
+      `<span>Saved on this phone. It will send automatically when there's internet.</span>` +
+      `<button id="driveRetry"><span>Try now</span></button>`);
+    return;
+  }
+  let last = null;
+  try { last = JSON.parse(localStorage.getItem(LASTSENT_KEY)); } catch (e) {}
+  if (last && !running && events.length > 0) {
+    showDriveStatus('done', `<span>✓ Scores sent. You're all done!</span>`);
+  }
+}
+window.addEventListener('online', () => flushDriveUploads(false));
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') flushDriveUploads(false); });
+
+// Manual export (backup only)
 el('exportBtn').addEventListener('click', async () => {
   if (events.length === 0) return;
-  const [n1, n2] = teamNames();
   const json = JSON.stringify(buildMatchData(), null, 1);
-
-  const dateStr = new Date().toISOString().slice(0,10);
-  const safeName = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-  const filename = `${dateStr}-${safeName(n1)}-vs-${safeName(n2)}.json`;
+  const filename = matchFilename();
   const blob = new Blob([json], { type: 'application/json' });
-
-  // Try the native share sheet first (gives "Save to Drive" on phones)
   try {
-    const file = new File([blob], filename, { type: "application/json" });
+    const file = new File([blob], filename, { type: 'application/json' });
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      // Files only — no title. Passing a title made some share targets save it
-      // as a SECOND item, a 40-byte .txt containing just the filename. The File
-      // object already carries the name, so the title added nothing but litter.
-      await navigator.share({ files: [file] });
-      clearCheckpoint();
+      await navigator.share({ files: [file] });   // files only — a title creates a stray .txt on some targets
       return;
     }
-  } catch (e) {
-    // user cancelled the share sheet, or sharing unsupported — fall through to download
-    if (e && e.name === 'AbortError') return;
-  }
-
-  // Fallback: normal download (desktop browsers, or phones without file sharing)
+  } catch (e) { if (e && e.name === 'AbortError') return; }
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
   URL.revokeObjectURL(url);
-  clearCheckpoint();
 });
 
-[el('team1Name'), el('team2Name')].forEach(i => i.addEventListener('input', () => { refreshScoreboard(); refreshSetHistory(); }));
-refreshScoreboard();
-tryRestoreCheckpoint();
+// ---- Message toast ----
+let toastTimer = null;
+function showToast(msg) {
+  let t = document.getElementById('toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'toast'; t.className = 'toast'; t.setAttribute('role', 'alert');
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+}
 
+// ===========================================================================
+// BOOT
+// ===========================================================================
+checkForSavedMatch();
+render();
+if (loadPending().length > 0) flushDriveUploads(false);
 </script>
 </body>
 </html>

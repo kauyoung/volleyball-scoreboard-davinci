@@ -11,9 +11,11 @@ score the match on a phone or laptop (live at the game, or later during
 editing) → apply that scoring data onto a scripted Fusion scoreboard graph →
 render.
 
-The scoreboard shows: live score, sets won, current set number, and which
-team is serving — built once as a reusable Fusion composition, then driven
-entirely by a JSON file of timestamped scoring events.
+The scoreboard shows: live score, sets won, current set number, which team
+is serving, SET POINT / MATCH POINT tags and an optional team logo, with
+broadcast-style motion (score pops, fades, set-change transitions) — built
+once as a reusable Fusion composition, then driven entirely by a JSON file of
+timestamped scoring events.
 
 ## Why this exists
 
@@ -40,10 +42,12 @@ Fusion composition until final render.
 - **ffmpeg** on your PATH (only needed if your camera shoots HEVC/H.265 and
   you're on the free edition — see `convert-footage.bat` below). Free
   download from ffmpeg.org.
-- **Fonts**: the scoreboard uses **Gotham** (Medium) for scores and labels and
-  **Gotham Narrow** (Bold) for team names. They're commercial fonts — change
-  `FONT` / `NAME_FONT` at the top of `build-scoreboard.lua` to anything you
-  have installed (a condensed font for names fits the most characters).
+- **Font**: the scoreboard uses **Barlow Condensed** (SemiBold for scores and
+  labels, Bold for team names) — free under the SIL Open Font License from
+  Google Fonts, so it's fine for YouTube. Install it for your Windows user
+  (or all users) before running the builder. Team names are shown in capitals
+  (`NAMES_UPPERCASE`). To use another font change `FONT` / `NAME_FONT` in
+  `build-scoreboard.lua` and re-measure `NAME_CHAR_W` (see Known limitations).
 - **Python 3 + Pillow** (optional, only for `tools/make-thumbnail.py`).
 - An Nvidia GPU is used for hardware-accelerated video conversion
   (`h264_nvenc`) in `convert-one.ps1`. Without one, edit that file to use
@@ -57,8 +61,8 @@ Fusion composition until final render.
 ```
 ├── resolve-scripts/     Lua scripts run from DaVinci Resolve's Console
 ├── footage-conversion/  Windows HEVC→H.264 converter (.bat + .ps1)
-├── scorekeeper/         The scorekeeping web app
-├── assets/              Serve-ball icon used by the overlay
+├── scorekeeper/         The scorekeeping web app + optional Google Drive receiver
+├── assets/              Serve-ball icons used by the overlay
 ├── tools/               YouTube thumbnail generator
 └── docs/                Manual walkthrough + a sample match file
 ```
@@ -68,12 +72,13 @@ Fusion composition until final render.
 | `footage-conversion/convert-footage.bat` | Double-click-to-run converter. Finds the newest dated match folder, converts every `DJI_*.mov`/`.mp4` from HEVC to H.264 (hardware-accelerated), preserves exact filenames, keeps the originals in a `raw_originals` backup folder. Safe to re-run — skips anything already converted. |
 | `footage-conversion/convert-one.ps1` | Helper script `convert-footage.bat` calls per clip — shows a live percent/ETA progress bar during conversion. Not meant to be run by hand. |
 | `resolve-scripts/assemble-match.lua` | Run once per match from Resolve's Console. Imports every clip from the newest match folder and builds a gap-free timeline at the right resolution/frame rate. Prints a verification report — total length vs. sum of source clips, and a chapter-order sanity check — so a bad import shows up as text instead of a silent, drifting overlay. |
-| `resolve-scripts/build-scoreboard.lua` | Builds the entire scoreboard's Fusion node graph from scratch: bar, score cells, team names, sets, serve indicator, drop shadow. Team names are anchored on their outer edge, so both sit the same distance from the ends of the bar whatever their length. Bar width (`BAR_WIDTH`) and team-name font (`NAME_FONT`) are configurable. Run once per match. |
-| `resolve-scripts/apply-match.lua` | Reads a match JSON file (see below) and writes keyframes onto the nodes `build-scoreboard.lua` created — score, sets, set number, and serve indicator, all as instant "step" changes rather than animated ramps. Also sets the team names from the file and **automatically re-aligns each set to its clip join** (see below). |
+| `resolve-scripts/build-scoreboard.lua` | Builds the entire scoreboard's Fusion node graph from scratch: bar, score cells, team names, sets, serve indicator, "SET n" tab, SET POINT / MATCH POINT tags, optional team logo, outline, sheen, drop shadow and an overall fade. Team names are anchored on their outer edge, so both sit the same distance from the ends of the bar whatever their length. Look is configurable at the top (`BAR_WIDTH`, `BAR_RAISE`, `PILL_STYLE`, fonts, colours). Run once per match. |
+| `resolve-scripts/apply-match.lua` | Reads a match JSON file (see below) and writes keyframes onto the nodes `build-scoreboard.lua` created — score, sets, set number and serve indicator as instant "step" changes, plus the motion (score/sets pops, SET POINT / MATCH POINT tags worked out from the score, set-change dips, fade in/out). Also sets the team names from the file and **automatically re-aligns each set to its clip join** (see below). |
 | `resolve-scripts/run-overlay.lua` | Convenience wrapper — runs `build-scoreboard.lua` then `apply-match.lua` back to back. |
-| `scorekeeper/volleyball-scorekeeper.html` | Self-contained scorekeeping web app (works live at the gym on a phone, or on a laptop during editing while replaying the assembled footage). Tracks score, sets, serve, and timestamps every event automatically. Exports the JSON file the Lua scripts consume. |
+| `scorekeeper/volleyball-scorekeeper.html` | Self-contained scorekeeping web app with a guided, one-screen-at-a-time flow simple enough for anyone at the gym: who's playing → press record + START → two giant team buttons with a 5-second UNDO → automatic set-over screen → FINISH MATCH. Timestamps every event, survives the page being closed mid-match, and exports the JSON file the Lua scripts consume — or sends it to Google Drive automatically (below). |
+| `scorekeeper/scorekeeper-drive-upload.gs` | Optional Google Apps Script "web app" that receives the match file from the scorekeeper and saves it into a Drive folder, so nobody has to export or email anything. |
 | `tools/make-thumbnail.py` | Builds a 1280×720 YouTube thumbnail from the match file and a frame of the finished video: date, team names, team logo, and one score tile per set. |
-| `assets/volleyball-serve-icon.png` | The serve-indicator icon `build-scoreboard.lua` places on whichever team is serving. |
+| `assets/volleyball-serve-icon-bold.png` | The serve-indicator icon `build-scoreboard.lua` places on whichever team is serving (bold version, used by default). `volleyball-serve-icon.png` is the original thin-line version. |
 | `docs/fusion-scoreboard-walkthrough.md` | Manual, click-by-click guide to building the same scoreboard graph by hand in Fusion — useful for understanding what the script automates, or for customizing the look yourself. |
 | `docs/match-sample.json` | A synthetic example match file (not a real game) showing the data format `apply-match.lua` expects. |
 
@@ -89,8 +94,18 @@ small `CONFIG` section near the top — edit these to match your own machine:
 - **`apply-match.lua`** — same `MATCH_ROOT` / `WORK_DIR` idea.
 - **`run-overlay.lua`** — `BASE`, the folder you copied these scripts to.
 - **`build-scoreboard.lua`** — `SERVE_ICON_PATH` (point this at wherever
-  you save `volleyball-serve-icon.png` — somewhere permanent, not a
-  Downloads folder that gets cleared) and `TEAM1_NAME` / `TEAM2_NAME`.
+  you save `volleyball-serve-icon-bold.png` — somewhere permanent, not a
+  Downloads folder that gets cleared), `LOGO_DIR` (optional team logos, see
+  below) and `TEAM1_NAME` / `TEAM2_NAME` (only used when run on its own;
+  `run-overlay.lua` passes the names from the match file).
+- **Team logo (optional)** — put a transparent PNG named after your team in
+  `LOGO_DIR` (lower-case, spaces as dashes: `home-team.png` for "Home Team").
+  It appears at the outer end of your team's side of the bar and the name
+  shifts inward to make room. No file, no logo.
+- **Colours** — `GREEN` (your team) and `BLUE` (opponent) near the top of
+  `build-scoreboard.lua`, with the matching `TEAM_RGB` in `apply-match.lua`
+  and `--team1` / `--opp` in the scorekeeper. Light colours read best as
+  text on the dark bar.
 
 Every placeholder path in the scripts is written as an obvious
 `C:/Users/YOURNAME/...`-style string — search for `YOURNAME` if you want
@@ -113,15 +128,18 @@ to find every line that needs a personal value.
    which looks similar but doesn't carry a Fusion page comp), then resize
    it to span the whole timeline. Resolve's scripting API can't do this
    part reliably, so it's a manual step.
-5. **Score the match**: open `scorekeeper/volleyball-scorekeeper.html` and tap along —
-   either live at the game (tap Start the instant you press record) or
-   later during editing (play the assembled timeline back at 1x speed and
-   tap along to it). Whenever the camera stops — normally at set breaks —
-   tap **Stop Recording** (it asks for a second tap to confirm), then
-   **End Set**; when the camera starts again tap **Resume Recording** (it
-   turns solid green while you're stopped, and +1 taps are refused with a
-   warning until you resume). After the final set, use **End Match**.
-   Export the JSON when the match ends.
+5. **Score the match**: open `scorekeeper/volleyball-scorekeeper.html` and
+   follow the screens — either live at the game (press record on the camera,
+   then START) or later during editing (play the assembled timeline back at
+   1x speed and tap along). Tap the big team button when a team wins a
+   rally; a 5-second UNDO bar catches mis-taps. When a set is won the app
+   switches to a set-over screen: stop the camera and tap **I stopped the
+   camera** (or **Camera is still recording** if you keep rolling), then tap
+   **Camera is recording again** when play resumes. Mid-set camera stops,
+   removing a point and ending early are under **More options**. When the
+   match is won, tap **FINISH MATCH** — the file is sent to Google Drive
+   automatically if you set that up, and **Export match file** is always
+   there as a backup.
 6. **Build and apply the scoreboard**: with the Fusion Composition clip
    selected and the Fusion page open, run `run-overlay.lua` from the
    Console.
@@ -137,6 +155,36 @@ to find every line that needs a personal value.
    YouTube chapters need at least three timestamps, starting at 0:00 — for
    a two-set match add a third (e.g. "Match point").
 
+## Google Drive auto-upload (optional)
+
+1. Create a new project at script.google.com, paste in
+   `scorekeeper/scorekeeper-drive-upload.gs`, and change `SECRET_KEY` to a
+   long random string (and `FOLDER_NAME` if you like).
+2. Deploy → New deployment → Web app, execute as **Me**, access **Anyone**.
+   Authorize it, and copy the web-app URL (ends in `/exec`).
+3. In `volleyball-scorekeeper.html` set `DRIVE_URL` to that URL and
+   `DRIVE_KEY` to the same secret, then host the page (e.g. Netlify drop).
+
+At FINISH MATCH the phone sends the match file; if there's no signal it keeps
+it and retries automatically (on reopen, when back online, when the page
+returns to the foreground) until Drive confirms. If you change the script
+later, redeploy it as a new version or the old one keeps running.
+
+## Scoreboard design
+
+- Bar raised about 10% up the frame (`BAR_RAISE`) so YouTube's player
+  controls, which cover the bottom ~8% when the video is paused, never hide it.
+- "SET n" sits in a tab joined to the top of the score box (`PILL_STYLE =
+  "tab"`), the same shade as the score box, with a faint outline around bar
+  and tab that lines up with the cell separators. `"float"` and `"clean"` are
+  alternative floating-pill styles.
+- SET POINT / MATCH POINT tags (floating pills in the team's colour) are
+  worked out from the score after every rally — deuce handled, set 3 to 15.
+- Motion: the scoring team's number pops and flashes its colour, the sets
+  number does the same when a set is won, tags fade in/out, the set number
+  and scores dip out and back in at a set change, and the whole scoreboard
+  fades in and out at the start and end of the video.
+
 ## Automatic set alignment
 
 Every set break is a camera stop, so every set after the first begins at a
@@ -148,6 +196,12 @@ that whole set by the difference. It reports each shift, and skips itself
 (with a message) if the number of set breaks doesn't match the number of
 clip joins — i.e. the camera was also stopped mid-set — or if a shift would
 be larger than `ALIGN_MAX_SEC`. The match file itself is never modified.
+
+Cameras that split long recordings into chapter files (DJI splits at about
+16 GB, ~18–21 min of 4K60) produce clip joins that aren't camera stops. Those
+are recognised from the filenames (the next file starts exactly where the
+previous one ended) and ignored, so recording straight through a match works
+too.
 Turn it off with `AUTO_ALIGN_SETS = false`.
 
 ## Known limitations
@@ -163,17 +217,18 @@ Turn it off with `AUTO_ALIGN_SETS = false`.
   position on track V1 with no resize/reposition API available — placing
   it on V2 and stretching it to fit has to be done by hand (see step 4
   above).
-- **An accidental "Stop Recording" tap in the scorekeeper app can't be
+- **An accidental mid-set "camera stopped" in the scorekeeper app can't be
   undone** — the excluded time is baked into every timestamp logged after
-  it. The app requires a two-tap confirm to make this unlikely, and
+  it. It's tucked under More options behind a two-tap confirm, and
   automatic set alignment corrects mistimed taps at set breaks.
 - **Team names are width-estimated for truncation.** Positioning is exact
   (edge-anchored), but the "too long, add ..." check uses an average
-  character width calibrated for Gotham Narrow Bold. If you change
+  character width calibrated for Barlow Condensed Bold in capitals. If you change
   `NAME_FONT`, re-measure `NAME_CHAR_W` in both `build-scoreboard.lua`
   and `apply-match.lua`.
-- Team names longer than about 22 characters get automatically truncated
-  with "..." so they don't overlap the serve-ball icon.
+- Team names longer than about 21 characters (about 16 on the side with a
+  logo) get automatically truncated with "..." so they don't overlap the
+  serve-ball icon. The scorekeeper warns about long names when you type them.
 - The serve ball fades in/out over a few frames rather than cutting
   instantly. Cosmetic only.
 

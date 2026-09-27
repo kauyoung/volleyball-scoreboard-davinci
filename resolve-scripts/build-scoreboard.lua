@@ -40,7 +40,10 @@
 -- CONFIG
 --------------------------------------------------------------------------------
 
-local SERVE_ICON_PATH = [[C:\Users\YOURNAME\Documents\Resolve Assets\volleyball-serve-icon.png]]
+-- 2026-09-27: bolder version (strokes ~35% thicker) so the ball matches the
+-- weight of the bold text around it. The original thin icon is still there as
+-- volleyball-serve-icon.png if we ever want it back.
+local SERVE_ICON_PATH = [[C:\Users\YOURNAME\Documents\Resolve Assets\volleyball-serve-icon-bold.png]]
 
 -- auto-overlay.lua fills these in from the match JSON automatically (via the
 -- SCOREBOARD_TEAM1/2 globals). The values below are only used when this
@@ -48,13 +51,20 @@ local SERVE_ICON_PATH = [[C:\Users\YOURNAME\Documents\Resolve Assets\volleyball-
 local TEAM1_NAME = rawget(_G, "SCOREBOARD_TEAM1") or "Home Team"
 local TEAM2_NAME = rawget(_G, "SCOREBOARD_TEAM2") or "Opponent"
 
-local FONT       = "Gotham"
-local FONT_STYLE = "Medium"
+-- Team names are shown in capitals (broadcast style), whatever was typed in
+-- the scorekeeper. Keep in step with NAMES_UPPERCASE in apply-match.lua.
+local NAMES_UPPERCASE = true
+if NAMES_UPPERCASE then TEAM1_NAME, TEAM2_NAME = TEAM1_NAME:upper(), TEAM2_NAME:upper() end
+
+-- 2026-09-26: switched from Gotham to Barlow Condensed (free, Google Fonts,
+-- OFL licence — fine for YouTube). Sizes below were raised to suit it.
+local FONT       = "Barlow Condensed"
+local FONT_STYLE = "SemiBold"
 
 -- Team names only: Gotham Narrow fits ~20% more characters in the same space
 -- and stays in the same family as everything else on the bar. (Narrow is
 -- installed in Bold only.) Keep in step with NAME_CHAR_W in apply-match.lua.
-local NAME_FONT       = "Gotham Narrow"
+local NAME_FONT       = "Barlow Condensed"
 local NAME_FONT_STYLE = "Bold"
 
 -- Width of the whole bar, as a fraction of frame width BEFORE OVERALL_SIZE.
@@ -64,6 +74,67 @@ local NAME_FONT_STYLE = "Bold"
 local BAR_WIDTH = 0.85
 
 local CLEAR_EXISTING = true    -- true = delete every node except MediaOut1 first
+
+-- 2026-09-26 position check: YouTube's player controls (progress bar + buttons)
+-- cover roughly the bottom 8% of the picture whenever the video is paused or
+-- the mouse moves. The bar used to start ~7.5% up, so its bottom edge and the
+-- whole SET pill vanished under them. BAR_RAISE lifts the finished bar by this
+-- fraction of frame height (applied on the MasterSize Transform, AFTER scaling)
+-- so its bottom edge sits at ~10%; the SET pill moved from below the bar to
+-- above it (PILL_ABOVE) so nothing is left in the controls zone.
+local BAR_RAISE  = 0.025
+local PILL_ABOVE = true
+
+-- Look of the "SET n" box (and the SET POINT tags, which share its row):
+--   "float"  separate rounded pill floating above the bar, wide letter-spacing
+--            (the original — replaced 2026-09-27: looked out of place)
+--   "clean"  same floating pill, but tighter, bolder, brighter text, snug pill
+--   "tab"    a tab joined to the top of the bar, exactly as wide as the grey
+--            score cell and the same grey, so it reads as the score box's
+--            header; SET POINT tags become matching tabs on the name cells
+-- _G.SCOREBOARD_PILL_STYLE overrides this for design previews.
+local PILL_STYLE = rawget(_G, "SCOREBOARD_PILL_STYLE") or "tab"   -- chosen 2026-09-27
+local BAR_TOP    = 0.115 + 0.0575            -- top edge of the bar (pre-MasterSize)
+local TAB_H      = 0.052
+-- The SET tab must be EXACTLY the score cell's shade, or the outline/separator
+-- lines (white 0.16 on top) read brighter on one than the other (2026-09-27). The cell is white 0.12 over black 0.74, i.e. effective alpha
+-- 1 - 0.26*0.88 = 0.771 and colour 0.1252/0.771 = 0.162 — same result over
+-- any background video.
+local TAB_GREY   = { 0.162, 0.162, 0.162 }
+local TAB_ALPHA  = 0.771
+-- Faint outline around the whole shape (bar + SET tab, and each SET POINT tab
+-- while it shows) — 2026-09-27. Only used with the "tab" style.
+local OUTLINE       = true
+-- Matched to the cell separators (0.0008 wide at alpha 0.16) so the tab's side
+-- lines continue the score cell's separator lines exactly (2026-09-27:
+-- at 3 px / 0.22 they sat a few pixels off and looked like two lines).
+local OUTLINE_ALPHA = 0.16
+local OUTLINE_PX    = 0.0008 * 3840 * 0.70   -- = separator width on the 4K frame (~2.15 px)
+local TAB_EXT       = 0.02     -- tabs are drawn this far down INTO the bar, then the
+                               -- bar's shape is cut out, so they join with no seam
+
+-- Team logo (optional). If a PNG named after Team 1 exists in LOGO_DIR
+-- (lower-case, spaces -> dashes, e.g. "home-team.png"), it's placed at the
+-- outer end of the Team 1 cell and the name shifts inward to make room. No file
+-- = no logo, name back at the edge (so another team works without one).
+-- apply-match.lua detects the Team1Logo node and allows for it when fitting.
+local LOGO_DIR    = "C:/Users/YOURNAME/scoreboard-pipeline/team-logos/"
+local LOGO_H      = 0.78    -- logo height as a fraction of the bar's height
+local LOGO_START  = 0.018   -- bar end -> logo left edge (pre-MasterSize units)
+local LOGO_GAP    = 0.010   -- logo right edge -> team name
+
+-- Depth: a faint top sheen on the bar + a softer, stronger drop shadow.
+local SHEEN_ALPHA   = 0.07
+local SHADOW_SOFT   = 10
+local SHADOW_ALPHA  = 0.60
+
+-- SET POINT / MATCH POINT tags (approved 2026-09-26: style "text" = dark pill,
+-- words in the team colour). apply-match.lua switches them on and off.
+local SHOW_POINT_TAGS = true
+local TAG_STYLE       = "text"
+local TAG_TEXT_BLUE   = { 0.42, 0.74, 1.00 }   -- #6BBDFF — same as BLUE (one blue everywhere)
+-- Design previews only: _G.SCOREBOARD_TAG_PREVIEW = { side=1|2, text=..., style=... }
+local TAG_PREVIEW = rawget(_G, "SCOREBOARD_TAG_PREVIEW")
 
 -- Overall scale of the whole scorebar. 1.0 = the original full-width version.
 -- This drives the MasterSize Transform, which scales about the bar's own centre
@@ -78,8 +149,11 @@ local OVERALL_SIZE = 0.70
 local SERVE_SIZE = 0.14
 
 -- Club colours (from the brief — locked, don't change)
-local GREEN = { 0.439, 0.835, 0.286 }   -- #70D549  Team 1 (example)
-local BLUE  = { 0.039, 0.518, 1.000 }   -- #0A84FF  opponent
+local GREEN = { 0.439, 0.835, 0.286 }   -- #70D549  home team
+-- 2026-09-27: one blue everywhere Was the club blue #0A84FF, which
+-- was too dark to read as text; sky blue #6BBDFF is now used for the accent
+-- line, tag words and score flash alike.
+local BLUE  = { 0.42,  0.74,  1.00  }   -- #6BBDFF  opponent
 local BLACK = { 0.008, 0.012, 0.012 }   -- #020303  club black
 local WHITE = { 1.0,   1.0,   1.0   }
 
@@ -280,6 +354,14 @@ local function place(element, name, blend)
   stack(element, name, blend)
 end
 
+-- Depth: a faint white sheen across the upper part of the bar, soft-edged and
+-- inset from the rounded ends so it never pokes past the bar's outline. Reads
+-- as light falling on the top of the bar rather than a flat black strip.
+local sheen = plate("BarSheen", WHITE, SHEEN_ALPHA,
+      { w = BAR_WIDTH - 0.05, h = 0.048, x = 0.5, y = 0.115 + 0.030, r = 0.5 }, COL + 1, ROW + 2)
+if sheen and childOf[sheen] then setv(childOf[sheen], "SoftEdge", 0.012) end
+place(sheen)
+
 -- Step 3 — score cell, hairline, separators -------------------------------
 -- White at 0.12 over the black bar reads as a lighter grey panel, so the live
 -- score stands out from the name/sets cells. (Was 0.055 — barely visible.)
@@ -312,11 +394,14 @@ place(plate("SepNameRight", WHITE, 0.16,
       { w = 0.0008, h = 0.115, x = 0.621, y = 0.115 }, COL + 4, ROW + 6))
 
 -- Step 4 — team accent bars -----------------------------------------------
+-- 2026-09-27: thicker and taller (was 0.0016 x 0.052) — the thin short lines
+-- looked detached from the bar. 0.070 tall still clears the rounded ends.
+local ACCENT_W, ACCENT_H = 0.0026, 0.070
 place(plate("AccentLeft", GREEN, 1.0,
-      { w = 0.0016, h = 0.052, x = 0.5 - BAR_WIDTH / 2 + 0.0085, y = 0.115, r = 1.0 }, COL + 5, ROW + 2))
+      { w = ACCENT_W, h = ACCENT_H, x = 0.5 - BAR_WIDTH / 2 + 0.0085, y = 0.115, r = 1.0 }, COL + 5, ROW + 2))
 
 place(plate("AccentRight", BLUE, 1.0,
-      { w = 0.0016, h = 0.052, x = 0.5 + BAR_WIDTH / 2 - 0.0085, y = 0.115, r = 1.0 }, COL + 6, ROW + 2))
+      { w = ACCENT_W, h = ACCENT_H, x = 0.5 + BAR_WIDTH / 2 - 0.0085, y = 0.115, r = 1.0 }, COL + 6, ROW + 2))
 
 -- Step 5 — text ------------------------------------------------------------
 -- TEAM NAMES ---------------------------------------------------------------
@@ -327,8 +412,8 @@ place(plate("AccentRight", BLUE, 1.0,
 -- estimate the name's width, then place its centre so the OUTER edge always
 -- lands NAME_MARGIN in from the end of the bar. Both sides then match, whatever
 -- the opponent is called.
-local NAME_SIZE   = 0.026
-local NAME_CHAR_W = 0.0115   -- Gotham Narrow Bold at NAME_SIZE, measured on a 4K render (Gotham Medium was 0.0138)
+local NAME_SIZE   = 0.037   -- Barlow Condensed (was 0.026 with Gotham Narrow)
+local NAME_CHAR_W = 0.0115   -- Barlow Condensed Bold CAPS at 0.037: measured 0.0110–0.0112 on a 4K render (kept slightly conservative)
 local NAME_MARGIN = 0.020    -- gap from the end of the bar to the start of the text
 local BAR_L, BAR_R = 0.5 - BAR_WIDTH / 2, 0.5 + BAR_WIDTH / 2
 
@@ -374,8 +459,29 @@ end
 -- So each name is anchored on its OUTER edge — the gap to the end of the bar
 -- is exact whatever the name, with no width guessing. nameWidth() is now only
 -- used by checkName's "too long" warning.
+-- Team 1 logo lookup ------------------------------------------------------
+local function slug(s)
+  return (s:lower():gsub("[^%w]+", "-"):gsub("^%-+", ""):gsub("%-+$", ""))
+end
+local LOGO_FILE = LOGO_DIR .. slug(TEAM1_NAME) .. ".png"
+local HAS_LOGO = false
+do local fh = io.open(LOGO_FILE, "rb") if fh then fh:close() HAS_LOGO = true end end
+
+local FRAME_W, FRAME_H = 3840, 2160
+pcall(function()
+  FRAME_W = comp:GetPrefs("Comp.FrameFormat.Width")  or FRAME_W
+  FRAME_H = comp:GetPrefs("Comp.FrameFormat.Height") or FRAME_H
+end)
+-- Bar height is 0.115 of frame HEIGHT; the logo is LOGO_H of that, in pixels,
+-- then converted to a fraction of frame WIDTH for horizontal layout.
+local LOGO_PX = LOGO_H * 0.115 * FRAME_H
+local LOGO_W  = LOGO_PX / FRAME_W
+-- How far the Team 1 name moves inward when there's a logo (apply-match.lua
+-- reads the same number back off the Team1Logo merge, see below).
+local LOGO_SHIFT = HAS_LOGO and (LOGO_START + LOGO_W + LOGO_GAP - NAME_MARGIN) or 0
+
 local function nameAnchor(side)
-  if side == "left" then return BAR_L + NAME_MARGIN + NAME1_NUDGE end
+  if side == "left" then return BAR_L + NAME_MARGIN + LOGO_SHIFT + NAME1_NUDGE end
   return BAR_R - NAME_MARGIN + NAME2_NUDGE
 end
 
@@ -421,19 +527,20 @@ place(name2)
 -- SETS caption sits at 0.139 with the count at 0.101. The walkthrough's
 -- 0.132 / 0.106 left only a hairline of air between the caption and the
 -- number below it, which read as cramped rather than as a pair.
-local l1 = text("Team1SetsLabel", "SETS", 0.011, WHITE, 0.45, 0.406, 0.139, COL + 9,  ROW + 2)
+local l1 = text("Team1SetsLabel", "SETS", 0.016, WHITE, 0.45, 0.406, 0.139, COL + 9,  ROW + 2)
 setv(l1, "CharacterSpacing", 1.25)
 place(l1)
 
-place(text("Team1Sets", "0", 0.030, WHITE, 1.0, 0.406, 0.101, COL + 10, ROW + 2))
+place(text("Team1Sets", "0", 0.043, WHITE, 1.0, 0.406, 0.101, COL + 10, ROW + 2), "Team1SetsMerge")
 
-local l2 = text("Team2SetsLabel", "SETS", 0.011, WHITE, 0.45, 0.594, 0.139, COL + 11, ROW + 2)
+local l2 = text("Team2SetsLabel", "SETS", 0.016, WHITE, 0.45, 0.594, 0.139, COL + 11, ROW + 2)
 setv(l2, "CharacterSpacing", 1.25)
 place(l2)
 
-place(text("Team2Sets",  "0", 0.030, WHITE, 1.0, 0.594, 0.101, COL + 12, ROW + 2))
-place(text("Team1Score", "0", 0.054, WHITE, 1.0, 0.466, 0.115, COL + 13, ROW + 2))
-place(text("Team2Score", "0", 0.054, WHITE, 1.0, 0.534, 0.115, COL + 14, ROW + 2))
+-- Merges are named so apply-match.lua can fade them (set-change dip).
+place(text("Team2Sets",  "0", 0.043, WHITE, 1.0, 0.594, 0.101, COL + 12, ROW + 2), "Team2SetsMerge")
+place(text("Team1Score", "0", 0.076, WHITE, 1.0, 0.466, 0.115, COL + 13, ROW + 2), "Team1ScoreMerge")
+place(text("Team2Score", "0", 0.076, WHITE, 1.0, 0.534, 0.115, COL + 14, ROW + 2), "Team2ScoreMerge")
 
 -- Step 6 — serve balls -----------------------------------------------------
 -- The Loader is named Team1Serve / Team2Serve (per the spec), but the thing
@@ -475,6 +582,141 @@ serveAt("Team1ServeMerge", 0.3631)
 place(serveBall("Team2Serve", COL + 16), "Team2ServeMerge", 0.0)
 serveAt("Team2ServeMerge", 0.6369)
 
+-- Team 1 logo (only if a logo file exists for this team) -------------------
+-- Same Loader -> Transform -> Merge pattern as the serve balls: Size on the
+-- Transform is relative to the source PNG, position goes on the Merge.
+if HAS_LOGO then
+  local ld = add("Loader", "Team1LogoFile", COL + 16, ROW + 3)
+  if ld then
+    pcall(function() ld.Clip[1] = (LOGO_FILE:gsub("/", "\\")) end)
+    local srcPx = 600
+    pcall(function()
+      local a = ld:GetAttrs()
+      srcPx = (a.TOOLIT_Clip_Height and a.TOOLIT_Clip_Height[1]) or srcPx
+    end)
+    local tr = add("Transform", "Team1LogoXf", COL + 16, ROW + 2)
+    if tr then
+      tr.Input = ld.Output
+      setv(tr, "Size", LOGO_PX / srcPx)
+      childOf[tr] = ld
+      place(tr, "Team1Logo")
+      local m = comp:FindTool("Team1Logo")
+      if m then setPoint(m, "Center", BAR_L + LOGO_START + LOGO_W / 2, 0.115) end
+    end
+  end
+end
+
+-- SET POINT / MATCH POINT tags (approved 2026-09-26, style "text") ---------
+-- One tag per team, on the same row as the SET pill, lined up with the outer
+-- end of that team's cell. Both start hidden (merge Blend 0); apply-match.lua
+-- keyframes Team{n}TagBGMerge / Team{n}TagMerge Blend on and off, and the
+-- Team{n}Tag text between "SET POINT" and "MATCH POINT", from the match data.
+--   "text"   dark pill like SET n, words in the team colour   <- chosen (B)
+--   "accent" dark pill, white words, team-colour stripe at the outer end (A)
+--   "deep"   darker shade of the team colour, white words (C)
+--   "solid"  team-colour pill, black/white words (first try, rejected)
+-- TAG_PREVIEW = { side = 1|2, text = "...", style = "..." } forces one tag
+-- visible for a design preview; normal runs leave it nil.
+-- Mask helpers for the "tab" style ------------------------------------------
+-- A tab is a rectangle that starts TAB_EXT inside the bar and has the bar's own
+-- shape subtracted, so it meets the bar exactly (no overlap = no darker seam,
+-- and its bottom corners are hidden). The outline is built the same way:
+-- (shapes grown by OUTLINE_PX) minus (the shapes themselves).
+local BAR_RECT = { w = BAR_WIDTH, h = 0.115, x = 0.5, y = 0.115, r = 0.5 }
+local function rmask(name, rect, level, col, row)
+  local m = add("RectangleMask", name, col, row)
+  if not m then return nil end
+  setv(m, "UseFrameFormatSettings", 1)
+  setv(m, "Level",  level or 1.0)
+  setv(m, "Width",  rect.w)
+  setv(m, "Height", rect.h)
+  setPoint(m, "Center", rect.x, rect.y)
+  setv(m, "CornerRadius", rect.r or 0)
+  return m
+end
+local function chainMask(prev, m, mode)
+  if not (prev and m) then return m end
+  pcall(function() m:ConnectInput("EffectMask", prev) end)
+  local ok = pcall(function() m.PaintMode[0] = mode end)
+  if not ok then pcall(function() m:SetInput("PaintMode", mode, 0) end) end
+  return m
+end
+local function maskedPlate(name, colour, maskTool, col, row)
+  local bg = add("Background", name, col, row)
+  if not bg then return nil end
+  setv(bg, "TopLeftRed", colour[1]) setv(bg, "TopLeftGreen", colour[2]) setv(bg, "TopLeftBlue", colour[3])
+  setv(bg, "TopLeftAlpha", 1.0)
+  setv(bg, "UseFrameFormatSettings", 1)
+  pcall(function() bg:ConnectInput("EffectMask", maskTool) end)
+  childOf[bg] = maskTool
+  return bg
+end
+local function tabRect(cx, w, h, r)   -- the tab's rectangle, extended into the bar
+  return { w = w, h = h + TAB_EXT, x = cx, y = BAR_TOP + (h - TAB_EXT) / 2, r = r }
+end
+local function shrink(rect)
+  local dw = OUTLINE_PX / (FRAME_W * OVERALL_SIZE)
+  local dh = OUTLINE_PX / (FRAME_H * OVERALL_SIZE)
+  return { w = rect.w - 2 * dw, h = rect.h - 2 * dh, x = rect.x, y = rect.y, r = rect.r }
+end
+local function grow(rect)
+  local dw = OUTLINE_PX / (FRAME_W * OVERALL_SIZE)
+  local dh = OUTLINE_PX / (FRAME_H * OVERALL_SIZE)
+  return { w = rect.w + 2 * dw, h = rect.h + 2 * dh, x = rect.x, y = rect.y, r = rect.r }
+end
+local function tabPlate(name, colour, alpha, cx, w, h, r, col, row)
+  local a = rmask(name .. "Shape", tabRect(cx, w, h, r), alpha, col, row - 1)
+  local b = chainMask(a, rmask(name .. "Cut", BAR_RECT, 1.0, col, row - 2), "Subtract")
+  return maskedPlate(name, colour, b, col, row)
+end
+
+local function makeTag(side)
+  local TAG_TEXT = 0.026
+  local TAG_W, TAG_H = 0.150, 0.029 * 2   -- wide enough for "MATCH POINT"
+  local tagY = PILL_ABOVE and (0.115 + 0.0575 + 0.008 + 0.029) or 0.022
+  local tagR = 0.5
+  if PILL_STYLE == "clean" then
+    TAG_TEXT, TAG_H = 0.025, 0.052
+    tagY = BAR_TOP + 0.008 + TAG_H / 2
+  elseif PILL_STYLE == "tab" then
+    -- 2026-09-27: joined-on tags didn't look right — they FLOAT, with
+    -- their top lined up with the top of the SET tab.
+    TAG_TEXT, TAG_H = 0.024, TAB_H - 0.008
+    tagY = BAR_TOP + 0.008 + TAG_H / 2
+  end
+  local x = (side == 1) and (BAR_L + LOGO_START + TAG_W / 2) or (BAR_R - LOGO_START - TAG_W / 2)
+  local team = (side == 1) and GREEN or BLUE
+  local pv = (type(TAG_PREVIEW) == "table") and TAG_PREVIEW or nil
+  local style = (pv and pv.style) or TAG_STYLE
+  local shown = (pv and ((pv.side == 2) and 2 or 1) == side) and 1.0 or 0.0
+  local label = (pv and pv.text) or "SET POINT"
+
+  local bgCol, bgA, txtCol = BLACK, 0.74, WHITE
+  if style == "solid" then bgCol, bgA, txtCol = team, 1.0, (side == 1) and BLACK or WHITE
+  elseif style == "text" then
+    -- The club blue (#0A84FF) is too dark to read as small text on the dark
+    -- pill (2026-09-26), so the opponent's words use a lighter sky blue.
+    txtCol = (side == 1) and GREEN or TAG_TEXT_BLUE
+    if pv and pv.rgb and ((pv.side == 2) and 2 or 1) == side then txtCol = pv.rgb end
+  elseif style == "deep" then bgCol, bgA = { team[1] * 0.50, team[2] * 0.50, team[3] * 0.50 }, 0.95 end
+
+  local pre = "Team" .. side .. "Tag"
+  place(plate(pre .. "BG", bgCol, bgA, { w = TAG_W, h = TAG_H, x = x, y = tagY, r = tagR },
+        COL + 17, ROW + 4), pre .. "BGMerge", shown)
+  local tx = x
+  if style == "accent" then
+    local ax = (side == 1) and (x - TAG_W / 2 + 0.0095) or (x + TAG_W / 2 - 0.0095)
+    place(plate(pre .. "Accent", team, 1.0, { w = 0.0016, h = 0.030, x = ax, y = tagY, r = 1.0 },
+          COL + 17, ROW + 6), pre .. "AccentMerge", shown)
+    tx = x + ((side == 1) and 0.005 or -0.005)
+  end
+  local tg = text(pre, label, TAG_TEXT, txtCol, 1.0, tx, tagY + TAG_TEXT * 0.118, COL + 18, ROW + 4)
+  setv(tg, "Style", "Bold")
+  setv(tg, "CharacterSpacing", (PILL_STYLE == "float") and 1.15 or 1.06)
+  place(tg, pre .. "Merge", shown)
+end
+if SHOW_POINT_TAGS then makeTag(1) makeTag(2) end
+
 -- Step 7 — set pill --------------------------------------------------------
 -- Pill grown from 0.05 x 0.024 to 0.075 x 0.034, with the text up from 0.014
 -- to 0.017. The height/text ratio goes 1.7 -> 2.0, so the text sits inside a
@@ -491,23 +733,64 @@ serveAt("Team2ServeMerge", 0.6369)
 -- 0.075 x 0.034 the bigger text would have filled it edge to edge, losing the
 -- padding ring. Height stays at 2x the text size and the width scales to match,
 -- and the whole thing drops 0.004 to keep clear of the bar above it.
-local PILL_TEXT = 0.022
-local PILL_Y    = 0.026
+local PILL_TEXT = 0.029   -- Barlow Condensed (was 0.022 with Gotham)
+local PILL_Y    = 0.022   -- lowered from 0.026 so the taller Barlow pill clears the bar
+-- 2026-09-26: above the bar instead (bar top 0.1725 + 0.008 gap + half pill),
+-- so it's clear of YouTube's player controls. See BAR_RAISE / PILL_ABOVE.
+if PILL_ABOVE then PILL_Y = 0.115 + 0.0575 + 0.008 + PILL_TEXT end
 
-place(plate("PillBG", BLACK, 0.74,
-      { w = 0.097, h = PILL_TEXT * 2, x = 0.5, y = PILL_Y, r = 0.50 }, COL + 17, ROW + 2))
+local pillW, pillH, pillR, pillCol, pillA = 0.097, PILL_TEXT * 2, 0.50, BLACK, 0.74
+local pillTxt, pillTrack, pillTxtA, pillBold = PILL_TEXT, 1.20, 0.70, false
+if PILL_STYLE == "clean" then
+  -- Snug pill, text at normal-ish tracking, bold and near-white: reads as a
+  -- label rather than a spaced-out caption.
+  pillTxt, pillTrack, pillTxtA, pillBold = 0.025, 1.06, 0.95, true
+  pillW, pillH = 0.080, 0.052
+  PILL_Y = BAR_TOP + 0.008 + pillH / 2
+elseif PILL_STYLE == "tab" then
+  -- Joined to the bar above the grey score cell (0.134 wide), same grey, so
+  -- the score box looks like one piece with a header. Small corner radius so
+  -- the bottom corners meet the bar cleanly.
+  pillTxt, pillTrack, pillTxtA, pillBold = 0.025, 1.08, 0.95, true
+  -- Width = score cell (0.134) minus one outline width, so the outline drawn
+  -- just outside the tab lands exactly on the separators at 0.433 / 0.567.
+  -- Width = score cell (0.134) PLUS one line width: the outline is drawn just
+  -- INSIDE the edge, so it lands exactly on the separators at 0.433 / 0.567.
+  pillW, pillH, pillR, pillCol, pillA = 0.134 + 0.0008, TAB_H, 0.2, TAB_GREY, TAB_ALPHA
+  PILL_Y = BAR_TOP + pillH / 2
+end
 
--- Text sits 0.002 above the pill's centre. Text+ centres on the font's full em
--- box (ascender to descender), but "SET 1" is all caps with no descenders, so
--- centring the box leaves the visible glyphs low. This nudge optically centres
--- the caps instead of the box.
-local pillText = text("SetNumber", "SET 1", PILL_TEXT, WHITE, 0.70,
-                      0.5, PILL_Y + PILL_TEXT * 0.118, COL + 18, ROW + 2)
--- Wide tracking on small caps. NOTE: in Text+ this input is CharacterSpacing
--- and it is a MULTIPLIER (1.0 = normal), not the 0.10 figure in the walkthrough
--- — 0.10 would crush the letters together rather than spread them.
-setv(pillText, "CharacterSpacing", 1.20)
-place(pillText)
+if PILL_STYLE == "tab" then
+  place(tabPlate("PillBG", pillCol, pillA, 0.5, pillW, pillH, pillR, COL + 17, ROW + 2))
+  if OUTLINE then
+    -- One outline around bar + SET tab together: (bar grown) max (tab grown),
+    -- minus bar, minus tab. No line where the tab joins the bar.
+    local tr = tabRect(0.5, pillW, pillH, pillR)
+    -- 2026-09-27: the line is now drawn just INSIDE the edge (shape minus the
+    -- shape shrunk by one line width). Outside the edge it sat over the video,
+    -- so it looked brighter/different from the cell separators, which sit on
+    -- the dark bar. Inside, both are white 0.16 over the same dark background.
+    local m = rmask("OutlineA", BAR_RECT, OUTLINE_ALPHA, COL + 20, ROW + 3)
+    m = chainMask(m, rmask("OutlineB", tr, OUTLINE_ALPHA, COL + 20, ROW + 4), "Maximum")
+    m = chainMask(m, rmask("OutlineC", shrink(BAR_RECT), 1.0, COL + 20, ROW + 5), "Subtract")
+    m = chainMask(m, rmask("OutlineD", shrink(tr), 1.0, COL + 20, ROW + 6), "Subtract")
+    place(maskedPlate("BarOutline", WHITE, m, COL + 20, ROW + 2))
+  end
+else
+  place(plate("PillBG", pillCol, pillA,
+        { w = pillW, h = pillH, x = 0.5, y = PILL_Y, r = pillR }, COL + 17, ROW + 2))
+end
+
+-- Text sits a touch above the pill's centre. Text+ centres on the font's full
+-- em box (ascender to descender), but "SET 1" is all caps with no descenders,
+-- so centring the box leaves the visible glyphs low. This nudge optically
+-- centres the caps instead of the box.
+local pillText = text("SetNumber", "SET 1", pillTxt, WHITE, pillTxtA,
+                      0.5, PILL_Y + pillTxt * 0.118, COL + 18, ROW + 2)
+if pillBold then setv(pillText, "Style", "Bold") end
+-- NOTE: in Text+ CharacterSpacing is a MULTIPLIER (1.0 = normal).
+setv(pillText, "CharacterSpacing", pillTrack)
+place(pillText, "SetNumberMerge")
 
 -- Step 9 — master size dial (before the shadow, per the guide) -------------
 local master = add("Transform", "MasterSize", COL + 19, ROW)
@@ -519,6 +802,9 @@ if master then
   -- NOTE: on a Transform, Center is the image's POSITION; the scale anchor is
   -- Pivot. Setting Center here moves the whole comp off the bottom of frame.
   setPoint(master, "Pivot", 0.5, 0.115)
+  -- Lift the finished bar clear of YouTube's player controls (see BAR_RAISE).
+  -- Center is the image's position, so moving it up moves everything.
+  setPoint(master, "Center", 0.5, 0.5 + BAR_RAISE)
   top = master
 end
 
@@ -530,12 +816,31 @@ if shadow then
   -- nothing, and inspecting BarShadow confirmed Softness was still 0, i.e. the
   -- shadow was invisible. ShadowOffset is a point where 0.5,0.5 means "no
   -- offset", so the shadow also needs nudging down to be seen at all.
-  setv(shadow, "Softness", 4)
-  setPoint(shadow, "ShadowOffset", 0.5, 0.492)
-  setv(shadow, "Alpha", 0.45)
+  -- 2026-09-26 (depth): softer and stronger than the original 4 / 0.45, which
+  -- barely registered on a bright floor.
+  setv(shadow, "Softness", SHADOW_SOFT)
+  setPoint(shadow, "ShadowOffset", 0.5, 0.490)
+  setv(shadow, "Alpha", SHADOW_ALPHA)
   top = shadow
 else
   warn("Drop Shadow not created — add a 'Drop Shadow' node between the last Merge and MediaOut1 by hand (Softness 16, Opacity 0.45).")
+end
+
+-- Whole-scoreboard fade (2026-09-27) --------------------------------------
+-- Everything goes through one last Merge over a fully transparent Background;
+-- apply-match.lua animates FadeAllMerge's Blend so the scoreboard fades in
+-- over the first ~0.5 s of the video and out over the last ~0.5 s.
+local clear = add("Background", "ClearBG", COL + 21, ROW + 1)
+if clear then
+  setv(clear, "UseFrameFormatSettings", 1)
+  setv(clear, "TopLeftRed", 0) setv(clear, "TopLeftGreen", 0) setv(clear, "TopLeftBlue", 0)
+  setv(clear, "TopLeftAlpha", 0)
+  local fm = add("Merge", "FadeAllMerge", COL + 21, ROW)
+  if fm then
+    fm.Background = clear.Output
+    fm.Foreground = top.Output
+    top = fm
+  end
 end
 
 -- Connect to output --------------------------------------------------------
@@ -548,7 +853,9 @@ end
 -- Tail of the chain continues the same straight row.
 setPos(master,   mergeCount + 1, 0)
 setPos(shadow,   mergeCount + 2, 0)
-setPos(mediaOut, mergeCount + 3, 0)
+setPos(comp:FindTool("FadeAllMerge"), mergeCount + 3, 0)
+setPos(comp:FindTool("ClearBG"),      mergeCount + 3, 1)
+setPos(mediaOut, mergeCount + 4, 0)
 
 comp:EndUndo(true)
 comp:Unlock()
@@ -561,6 +868,9 @@ print("=====================================================")
 print(" Volleyball scoreboard built.")
 print(string.format(" %d merges, chained left to right.", mergeCount))
 print(string.format(" Teams: %s  vs  %s", TEAM1_NAME, TEAM2_NAME))
+print(HAS_LOGO and (" Team 1 logo: " .. LOGO_FILE)
+               or  (" Team 1 logo: none (no " .. LOGO_FILE .. ")"))
+if type(TAG_PREVIEW) == "table" then print(" ** Tag PREVIEW built: " .. tostring(TAG_PREVIEW.text)) end
 print("")
 
 if TEAM2_NAME == "Opponent" then

@@ -53,7 +53,7 @@ local MATCH_ROOT     = [[D:\Volleyball Matches]]
 -- ever move the working folder.
 local WORK_DIR       = "C:/Users/YOURNAME/scoreboard-pipeline"
 local MATCH_FALLBACK = WORK_DIR
-local MATCH_FILE     = ""
+local MATCH_FILE     = rawget(_G, "SCOREBOARD_MATCH_FILE") or ""   -- global = testing override
 
 -- Frame in the COMP that corresponds to t = 0 in the match data (i.e. the first
 -- frame of your video). If the Fusion Composition starts at the same point on
@@ -316,13 +316,47 @@ local function alignSetsToClipJoins()
   local tl = proj and proj:GetCurrentTimeline()
   if not tl then alignNotes[#alignNotes + 1] = "skipped — couldn't read the timeline" return end
   local items = tl:GetItemListInTrack("video", 1) or {}
-  local starts = {}
-  for _, it in ipairs(items) do starts[#starts + 1] = it:GetStart() end
-  table.sort(starts)
-  if #starts < 2 then alignNotes[#alignNotes + 1] = "skipped — only one clip, no set breaks to align" return end
+  local clips = {}
+  for _, it in ipairs(items) do
+    local name = ""
+    pcall(function() name = it:GetMediaPoolItem():GetClipProperty("File Name") or "" end)
+    if name == "" then name = it:GetName() or "" end
+    clips[#clips + 1] = { start = it:GetStart(), dur = it:GetDuration(), name = name }
+  end
+  table.sort(clips, function(a, b) return a.start < b.start end)
+  if #clips < 2 then alignNotes[#alignNotes + 1] = "skipped — only one clip, no set breaks to align" return end
   local tlFps = tonumber(tl:GetSetting("timelineFrameRate")) or fps
-  local joins = {}
-  for i = 2, #starts do joins[#joins + 1] = (starts[i] - starts[1]) / tlFps end
+
+  -- Only REAL camera stops count as set breaks. When the camera keeps rolling
+  -- through a long match it still splits the recording into chapter files, and
+  -- those joins are seamless — treating them as set breaks would shift sets onto
+  -- the wrong joins. DJI file names carry the recording start time
+  -- (DJI_YYYYMMDDHHMMSS_NNNN_D); if the next clip starts within a few seconds of
+  -- where this one ended, it's a chapter split, not a stop. Unparseable names
+  -- are treated as real stops (the previous behaviour).
+  local function startSecs(name)
+    local Y, Mo, D, h, mi, s = name:match("(%d%d%d%d)(%d%d)(%d%d)(%d%d)(%d%d)(%d%d)")
+    if not Y then return nil end
+    return os.time({ year = tonumber(Y), month = tonumber(Mo), day = tonumber(D),
+                     hour = tonumber(h), min = tonumber(mi), sec = tonumber(s) })
+  end
+  local joins, splits = {}, 0
+  for i = 2, #clips do
+    local a, b = startSecs(clips[i - 1].name), startSecs(clips[i].name)
+    local seamless = a and b and math.abs((b - a) - clips[i - 1].dur / tlFps) <= 3
+    if seamless then
+      splits = splits + 1
+    else
+      joins[#joins + 1] = (clips[i].start - clips[1].start) / tlFps
+    end
+  end
+  if splits > 0 then
+    alignNotes[#alignNotes + 1] = string.format("ignored %d seamless chapter split(s) — not set breaks", splits)
+  end
+  if #joins == 0 then
+    alignNotes[#alignNotes + 1] = "no camera stops found (recorded straight through) — sets kept as scored"
+    return
+  end
 
   -- Where each set after the first begins in the data (its 0-0 event).
   local setStart, order = {}, {}
@@ -495,6 +529,294 @@ counts["Team1Serve"] = animate(tool("Team1ServeMerge"), "Blend", srv1, "Team1Ser
 counts["Team2Serve"] = animate(tool("Team2ServeMerge"), "Blend", srv2, "Team2ServeMerge", true)
 
 --------------------------------------------------------------------------------
+-- SET POINT / MATCH POINT TAGS (2026-09-26)
+-- After every event, a team has SET POINT if winning the next rally wins the
+-- set: (score+1) reaches the target (25, or 15 in set 3) with a 2-point lead.
+-- It's MATCH POINT if that set would also be their 2nd set. Worked out fresh
+-- at every point, so deuce behaves naturally: 24-23 SET POINT -> 24-24 gone ->
+-- 25-24 SET POINT again (for whoever leads). Nothing shows once the set is won
+-- or at 0-0. Rules match the scorekeeper's setTarget() (best of 3, set 3 to 15).
+--------------------------------------------------------------------------------
+local SETS_TO_WIN = 2
+local function setTarget(setNo) return (setNo >= 3) and 15 or 25 end
+
+local tagOn  = { {}, {} }
+local tagTxt = { {}, {} }
+local tagMoments = 0
+for _, e in ipairs(match.events) do
+  local f = frameOf(e.t)
+  local sc   = { tonumber(e.score1) or 0, tonumber(e.score2) or 0 }
+  local sets = { tonumber(e.sets1) or 0,  tonumber(e.sets2) or 0 }
+  local target = setTarget(tonumber(e.set) or 1)
+  local hi, lo = math.max(sc[1], sc[2]), math.min(sc[1], sc[2])
+  local setOver = hi >= target and (hi - lo) >= 2
+  for t = 1, 2 do
+    local me, them = sc[t], sc[3 - t]
+    local sp = (not setOver) and (me + 1 >= target) and ((me + 1) - them >= 2)
+    -- sets[t] is sets already won; if this set is won too, is that the match?
+    local mp = sp and (sets[t] + 1 >= SETS_TO_WIN)
+    tagOn[t][#tagOn[t] + 1] = { f, sp and 1 or 0 }
+    if sp then
+      tagTxt[t][#tagTxt[t] + 1] = { f, mp and "MATCH POINT" or "SET POINT" }
+      tagMoments = tagMoments + 1
+    end
+  end
+end
+
+--------------------------------------------------------------------------------
+-- KEY WRITER FOR FADES (2026-09-27)
+-- Writes an explicit list of {frame, value} keys onto a numeric input (fresh
+-- spline each run). Callers always put a key on BOTH ends of every flat
+-- stretch, so Fusion's smooth splines stay perfectly flat between fades.
+--------------------------------------------------------------------------------
+local function writeKeys(node, inputName, list, label)
+  if not node then return 0 end
+  pcall(function()
+    local o = node[inputName]:GetConnectedOutput()
+    if o then o:GetTool():Delete() end
+  end)
+  local ok = pcall(function() node:AddModifier(inputName, "BezierSpline") end)
+  if not ok then fail((label or inputName) .. ": couldn't attach a spline") return 0 end
+  table.sort(list, function(a, b) return a[1] < b[1] end)
+  local n, lastF = 0, nil
+  for _, kv in ipairs(list) do
+    if kv[1] ~= lastF and kv[1] >= 0 then
+      pcall(function() node[inputName][kv[1]] = kv[2] end)
+      n, lastF = n + 1, kv[1]
+    end
+  end
+  return n
+end
+
+-- On/off series -> fade keys. Each change starts fading AT the point and is
+-- complete fadeFrames later (shortened if the next change comes sooner).
+local TAG_FADE_SEC = 0.25
+local function fadeKeys(series, fadeFrames)
+  local changes, last = {}, nil
+  for _, kv in ipairs(series) do
+    if kv[2] ~= last then changes[#changes + 1] = { kv[1], kv[2], last } last = kv[2] end
+  end
+  local keys = {}
+  if #changes == 0 then return { { 0, 0 } } end
+  keys[#keys + 1] = { 0, changes[1][3] or changes[1][2] }
+  for i, c in ipairs(changes) do
+    local f, to, from = c[1], c[2], c[3]
+    if from == nil then
+      keys[#keys + 1] = { f, to }
+    else
+      local nextF = changes[i + 1] and changes[i + 1][1] or math.huge
+      local F = math.max(1, math.min(fadeFrames, nextF - f - 4))
+      keys[#keys + 1] = { f - 1, from }
+      keys[#keys + 1] = { f, from }
+      keys[#keys + 1] = { f + F, to }
+      keys[#keys + 1] = { f + F + 1, to }
+    end
+  end
+  return keys
+end
+
+-- Skipped during a design preview so the forced-visible tag isn't switched off.
+if comp:FindTool("Team1TagMerge") and not rawget(_G, "SCOREBOARD_TAG_PREVIEW") then
+  local tagFade = math.floor(TAG_FADE_SEC * fps + 0.5)
+  for t = 1, 2 do
+    local pre = "Team" .. t .. "Tag"
+    -- 2026-09-27: tags fade in/out over TAG_FADE_SEC instead of popping.
+    for _, part in ipairs({ "Merge", "BGMerge", "AccentMerge", "LineMerge" }) do
+      if comp:FindTool(pre .. part) then
+        local n = writeKeys(tool(pre .. part), "Blend", fadeKeys(tagOn[t], tagFade), pre .. part)
+        if part == "Merge" then counts[pre] = n end
+      end
+    end
+    if #tagTxt[t] > 0 then
+      animate(tool(pre), "StyledText", tagTxt[t], pre, true)
+    end
+  end
+end
+
+--------------------------------------------------------------------------------
+-- SCORE POP (2026-09-26)
+-- When a team wins a point, its score number pops (grows SCORE_POP_SCALE and
+-- eases back over SCORE_POP_SEC) and flashes its team colour (fading back to
+-- white over SCORE_TINT_SEC). Only on +1 within a set — the 0-0 reset at a new
+-- set and any corrections (score going down) don't animate.
+--
+-- Every flat stretch gets a key at BOTH ends (release, release+1 ... f-2, f-1).
+-- Fusion's smooth splines take their slope from the neighbouring keys; with
+-- equal values on both sides the slope is zero, so the number sits perfectly
+-- still between points instead of drifting a few percent.
+--------------------------------------------------------------------------------
+local SCORE_POP        = true
+local SCORE_POP_SCALE  = 1.18
+local SCORE_POP_SEC    = 0.30
+local SCORE_TINT_SEC   = 0.60
+local TEAM_RGB = {
+  { 0.439, 0.835, 0.286 },   -- #70D549 team 1 green  (same as build-scoreboard)
+  { 0.42,  0.74,  1.00  },   -- #6BBDFF team 2 sky blue (club blue #0A84FF was too dark
+                             -- on the grey score panel; matches TAG_TEXT_BLUE, 2026-09-27)
+}
+
+local function popFrames(team)
+  local out, prevScore, prevSet = {}, nil, nil
+  local key = "score" .. team
+  for _, e in ipairs(match.events) do
+    local s = tonumber(e[key]) or 0
+    if prevScore ~= nil and e.set == prevSet and s == prevScore + 1 then
+      out[#out + 1] = frameOf(e.t)
+    end
+    prevScore, prevSet = s, e.set
+  end
+  return out
+end
+
+-- Writes base -> peak -> base pulses at the given frames onto one numeric input.
+local function pulse(node, inputName, frames, base, peak, holdFrames)
+  if not node then return 0 end
+  pcall(function()
+    local o = node[inputName]:GetConnectedOutput()
+    if o then o:GetTool():Delete() end
+  end)
+  pcall(function() node[inputName][0] = base end)
+  local ok = pcall(function() node:AddModifier(inputName, "BezierSpline") end)
+  if not ok then fail("couldn't animate " .. inputName) return 0 end
+
+  local n, lastKey = 0, -1
+  for i, f in ipairs(frames) do
+    local nextF = frames[i + 1] or math.huge
+    local rel = math.min(f + holdFrames, nextF - 4)
+    if f - 2 > lastKey and rel > f then
+      pcall(function()
+        node[inputName][f - 2]   = base
+        node[inputName][f - 1]   = base
+        node[inputName][f]       = peak
+        node[inputName][rel]     = base
+        node[inputName][rel + 1] = base
+      end)
+      lastKey = rel + 1
+      n = n + 1
+    end
+  end
+  return n
+end
+
+local popCheck = {}
+if SCORE_POP then
+  for team = 1, 2 do
+    local node = comp:FindTool("Team" .. team .. "Score")
+    if node then
+      local frames = popFrames(team)
+      local baseSize = 0.076
+      pcall(function() baseSize = node.Size[0] end)
+      -- a previous run's spline may still be on Size; read its first value
+      if type(baseSize) ~= "number" then baseSize = 0.076 end
+      local popN = pulse(node, "Size", frames, baseSize, baseSize * SCORE_POP_SCALE,
+                         math.floor(SCORE_POP_SEC * fps + 0.5))
+      local rgb = TEAM_RGB[team]
+      local tintF = math.floor(SCORE_TINT_SEC * fps + 0.5)
+      pulse(node, "Red1",   frames, 1.0, rgb[1], tintF)
+      pulse(node, "Green1", frames, 1.0, rgb[2], tintF)
+      pulse(node, "Blue1",  frames, 1.0, rgb[3], tintF)
+      counts["Team" .. team .. "Pop"] = popN
+
+      -- Sanity check the curve: sample from the first pop to ~2 s later. Size
+      -- must peak near base*scale and never dip noticeably below base.
+      if frames[1] then
+        local lo, hi = math.huge, -math.huge
+        for f = frames[1] - 3, frames[1] + math.floor(2 * fps) do
+          local v
+          pcall(function() v = node.Size[f] end)
+          if type(v) == "number" then lo = math.min(lo, v) hi = math.max(hi, v) end
+        end
+        popCheck[#popCheck + 1] = string.format(
+          "Team%dScore pop: %d pulses, size %.4f..%.4f (base %.4f)%s", team, popN, lo, hi, baseSize,
+          (lo < baseSize * 0.985) and "  *** DIPS BELOW BASE ***" or "")
+      end
+    end
+  end
+end
+
+--------------------------------------------------------------------------------
+-- POLISH (2026-09-27)
+--  * sets-won pop: a team's SETS number pops + flashes its colour when they
+--    win a set (same look as the score pop)
+--  * set-change dip: at the first event of a new set, "SET n" and both scores
+--    fade out and back in (~0.15 s each way) while they switch, instead of
+--    snapping to "SET 2" / 0-0 in one frame
+--  * whole-scoreboard fade in over the first 0.5 s and out over the last 0.5 s
+--------------------------------------------------------------------------------
+local polishNotes = {}
+
+-- Sets-won pop
+for team = 1, 2 do
+  local node = comp:FindTool("Team" .. team .. "Sets")
+  if node and SCORE_POP then
+    local frames, prev = {}, nil
+    for _, e in ipairs(match.events) do
+      local s = tonumber(e["sets" .. team]) or 0
+      if prev ~= nil and s == prev + 1 then frames[#frames + 1] = frameOf(e.t) end
+      prev = s
+    end
+    local base = 0.043
+    pcall(function() local v = node.Size[0] if type(v) == "number" then base = v end end)
+    local n = pulse(node, "Size", frames, base, base * SCORE_POP_SCALE, math.floor(SCORE_POP_SEC * fps + 0.5))
+    local rgb, tintF = TEAM_RGB[team], math.floor(SCORE_TINT_SEC * fps + 0.5)
+    pulse(node, "Red1", frames, 1.0, rgb[1], tintF)
+    pulse(node, "Green1", frames, 1.0, rgb[2], tintF)
+    pulse(node, "Blue1", frames, 1.0, rgb[3], tintF)
+    polishNotes[#polishNotes + 1] = string.format("Team%dSets pop: %d", team, n)
+  end
+end
+
+-- Set-change dip
+local DIP_SEC = 0.15
+do
+  local D = math.max(2, math.floor(DIP_SEC * fps + 0.5))
+  local dips, prevSet = {}, nil
+  for _, e in ipairs(match.events) do
+    local s = tonumber(e.set) or 1
+    if prevSet ~= nil and s ~= prevSet then dips[#dips + 1] = frameOf(e.t) end
+    prevSet = s
+  end
+  local keys = { { 0, 1 } }
+  for _, f in ipairs(dips) do
+    keys[#keys + 1] = { f - D - 1, 1 }
+    keys[#keys + 1] = { f - D, 1 }
+    keys[#keys + 1] = { f, 0 }
+    keys[#keys + 1] = { f + D, 1 }
+    keys[#keys + 1] = { f + D + 1, 1 }
+  end
+  local done = 0
+  for _, name in ipairs({ "SetNumberMerge", "Team1ScoreMerge", "Team2ScoreMerge" }) do
+    local m = comp:FindTool(name)
+    if m and #dips > 0 then
+      -- copy the key list: writeKeys sorts in place
+      local k = {} for i, kv in ipairs(keys) do k[i] = { kv[1], kv[2] } end
+      writeKeys(m, "Blend", k, name)
+      done = done + 1
+    end
+  end
+  polishNotes[#polishNotes + 1] = string.format("set-change dip: %d change(s) on %d node(s)", #dips, done)
+end
+
+-- Whole-scoreboard fade in/out
+do
+  local fm = comp:FindTool("FadeAllMerge")
+  if fm then
+    local a = comp:GetAttrs()
+    local startF = a.COMPN_RenderStart or a.COMPN_GlobalStart or 0
+    local endF   = a.COMPN_RenderEnd or a.COMPN_GlobalEnd
+    local F = math.floor(0.5 * fps + 0.5)
+    if endF and endF - startF > 4 * F then
+      writeKeys(fm, "Blend", {
+        { startF, 0 }, { startF + F, 1 }, { startF + F + 1, 1 },
+        { endF - F - 1, 1 }, { endF - F, 1 }, { endF, 0 } }, "FadeAllMerge")
+      polishNotes[#polishNotes + 1] = string.format("fade in %d-%d, fade out %d-%d", startF, startF + F, endF - F, endF)
+    else
+      polishNotes[#polishNotes + 1] = "fade skipped (couldn't read comp length)"
+    end
+  end
+end
+
+--------------------------------------------------------------------------------
 -- TEAM NAMES
 -- Static for the match, so no keyframes — but they DO need repositioning.
 -- The builder calculated each name's centre from whatever was in its config
@@ -503,7 +825,9 @@ counts["Team2Serve"] = animate(tool("Team2ServeMerge"), "Blend", srv2, "Team2Ser
 -- ended up hanging off the end of the bar.
 --------------------------------------------------------------------------------
 
-local NAME_CHAR_W  = 0.0115   -- Gotham Narrow Bold at 0.026, measured on a 4K render (Gotham Medium was 0.0138)
+local NAME_CHAR_W  = 0.0115   -- Barlow Condensed Bold CAPS at 0.037 (measured 0.0110–0.0112 on a 4K render)
+-- Keep in step with build-scoreboard.lua: names shown in capitals.
+local NAMES_UPPERCASE = true
 local NAME_MARGIN  = 0.020    -- gap from the end of the bar to the text
 -- Keep BAR_WIDTH in step with build-scoreboard.lua (0.75 until 2026-09-25).
 local BAR_WIDTH    = 0.85
@@ -538,12 +862,13 @@ end
 
 -- Trim from the end and append "..." until it fits. Any trailing space is
 -- stripped first, so we get "Riverside Rap..." rather than "Riverside Rap ...".
-local function fitName(str)
-  if nameWidth(str) <= NAME_MAX_W then return str, false end
+local function fitName(str, maxW)
+  maxW = maxW or NAME_MAX_W
+  if nameWidth(str) <= maxW then return str, false end
   local s = str
   while #s > 1 do
     s = s:sub(1, #s - 1):gsub("%s+$", "")
-    if nameWidth(s .. ELLIPSIS) <= NAME_MAX_W then return s .. ELLIPSIS, true end
+    if nameWidth(s .. ELLIPSIS) <= maxW then return s .. ELLIPSIS, true end
   end
   return ELLIPSIS, true
 end
@@ -561,10 +886,23 @@ local function setName(nodeName, raw, side)
   if not node then fail("node not found: " .. nodeName) return end
   if not raw then return end
 
-  local shown, wasCut = fitName(raw)
+  if NAMES_UPPERCASE then raw = raw:upper() end
+
+  -- 2026-09-26: if the builder placed a Team 1 logo, it already moved
+  -- Team1Name inward to make room. Read that shift back off the node (so the
+  -- logo size lives in one place, build-scoreboard.lua) and allow for it.
+  local shift = 0
+  if side == "left" and comp:FindTool("Team1Logo") then
+    pcall(function()
+      local c = node.Center[0]
+      shift = math.max(0, (c[1] or c.X) - (BAR_L + NAME_MARGIN + NAME1_NUDGE))
+    end)
+  end
+
+  local shown, wasCut = fitName(raw, NAME_MAX_W - shift)
   pcall(function() node.StyledText[0] = shown end)
   pcall(function() node.HorizontalLeftCenterRight[0] = (side == "left") and -1 or 1 end)
-  pcall(function() node.Center[0] = { nameAnchor(side), 0.115 } end)
+  pcall(function() node.Center[0] = { nameAnchor(side) + shift, 0.115 } end)
 
   if wasCut then
     fail(string.format("%q was too wide for the bar — showing %q", raw, shown))
@@ -615,6 +953,15 @@ say("   Team2Sets       " .. verify("Team2Sets",  "StyledText", firstF, lastF))
 say("   SetNumber       " .. verify("SetNumber",  "StyledText", firstF, lastF))
 say("   Team1ServeMerge " .. verify("Team1ServeMerge", "Blend", firstF, lastF))
 say("   Team2ServeMerge " .. verify("Team2ServeMerge", "Blend", firstF, lastF))
+for _, line in ipairs(popCheck) do say("   " .. line) end
+for _, line in ipairs(polishNotes) do say("   Polish: " .. line) end
+if comp:FindTool("Team1TagMerge") then
+  -- (No verify() sample here: tags are on for a few seconds per set, so 9
+  -- evenly spaced samples would nearly always miss them and cry "STATIC".)
+  say(string.format("   Point tags: SET/MATCH POINT showing after %d event(s)", tagMoments))
+else
+  say("   Point tags: not built (SHOW_POINT_TAGS off in build-scoreboard.lua)")
+end
 
 if #problems > 0 then
   say("")

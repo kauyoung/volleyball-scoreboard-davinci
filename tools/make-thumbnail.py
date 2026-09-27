@@ -1,5 +1,5 @@
 """
-YouTube thumbnail generator for a match (part of the scoreboard pipeline).
+Volleyball match YouTube thumbnail (design approved 2026-09-25).
 
 1280x720 JPG: darkened match frame, MATCH REPLAY tag + date, team logo top
 right, HOME TEAM (green) vs OPPONENT (white), one score tile per set along
@@ -15,7 +15,6 @@ cropped off, so the burned-in scoreboard doesn't show). fonts_dir must contain
 import json, sys, os, datetime
 from PIL import Image, ImageDraw, ImageFont, ImageEnhance
 
-# Your team logo (square image). Shown in a circle, top right. Skipped if missing.
 LOGO = "C:/Users/YOURNAME/scoreboard-pipeline/team-logo.jpg"
 W, H = 1280, 720
 GREEN = (112, 213, 73); WHITE = (255, 255, 255); INK = (2, 3, 3)
